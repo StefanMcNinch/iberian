@@ -233,13 +233,18 @@
         <div id="gameInfo" class="hud">
             <h3 style="margin-top: 0;">Game Info</h3>
             <div id="roundInfo">Round: Stock 1</div>
-            <div id="turnInfo">Current Player: -</div>
-            <div id="moneyInfo">Your Money: ₧40</div>
+            <div id="priorityInfo">Priority Deal: None</div>
+            <button class="btn" id="nextRoundBtn" style="margin-top: 10px;">Next Round</button>
         </div>
         
         <div id="playerList" class="hud">
             <h3 style="margin-top: 0;">Players</h3>
             <div id="players"></div>
+        </div>
+        
+        <div id="actionLog" class="hud" style="top: 200px; right: 20px; max-height: 300px; overflow-y: auto;">
+            <h3 style="margin-top: 0;">Action Log</h3>
+            <div id="actions"></div>
         </div>
         
         <div id="sharePanel" class="hud">
@@ -249,8 +254,9 @@
         </div>
         
         <div id="controls" class="hud">
-            <button class="btn" id="passBtn" style="width: auto;">Pass</button>
-            <button class="btn" id="buildBtn" style="width: auto;">Build Track</button>
+            <button class="btn" id="claimPriorityBtn" style="width: auto;">Claim Priority Deal</button>
+            <button class="btn" id="payDividendsBtn" style="width: auto;">Pay Dividends</button>
+            <button class="btn" id="resetBtn" style="width: auto;">Reset Game</button>
         </div>
     </div>
 
@@ -258,7 +264,6 @@
         // Game State
         const gameState = {
             players: [],
-            currentPlayer: 0,
             round: 'stock',
             roundNumber: 1,
             railroads: {
@@ -270,8 +275,8 @@
             },
             hexMap: [],
             myPlayerId: null,
-            myMoney: 40,
-            priorityDeal: 0
+            actionLog: [],
+            priorityDealHolder: null
         };
         
         // P2P Connection
@@ -379,15 +384,16 @@
                             connected: true
                         });
                         broadcastGameState();
-                        updateUI();
+                        logAction(`${data.playerName} joined the game`);
                     }
                     break;
                 case 'gameState':
                     gameState.players = data.players;
-                    gameState.currentPlayer = data.currentPlayer;
                     gameState.round = data.round;
                     gameState.roundNumber = data.roundNumber;
                     gameState.railroads = data.railroads;
+                    gameState.actionLog = data.actionLog || [];
+                    gameState.priorityDealHolder = data.priorityDealHolder;
                     updateUI();
                     break;
                 case 'buyShare':
@@ -396,15 +402,33 @@
                         broadcastGameState();
                     }
                     break;
-                case 'pass':
-                    if (isHost) {
-                        processPass(data.playerId);
-                        broadcastGameState();
-                    }
-                    break;
                 case 'buildTrack':
                     if (isHost) {
                         processBuildTrack(data.playerId, data.railroad, data.hex);
+                        broadcastGameState();
+                    }
+                    break;
+                case 'claimPriority':
+                    if (isHost) {
+                        processClaimPriority(data.playerId);
+                        broadcastGameState();
+                    }
+                    break;
+                case 'nextRound':
+                    if (isHost) {
+                        processNextRound();
+                        broadcastGameState();
+                    }
+                    break;
+                case 'payDividends':
+                    if (isHost) {
+                        processPayDividends(data.railroad);
+                        broadcastGameState();
+                    }
+                    break;
+                case 'action':
+                    logAction(data.message);
+                    if (isHost) {
                         broadcastGameState();
                     }
                     break;
@@ -415,10 +439,11 @@
             const message = {
                 type: 'gameState',
                 players: gameState.players,
-                currentPlayer: gameState.currentPlayer,
                 round: gameState.round,
                 roundNumber: gameState.roundNumber,
-                railroads: gameState.railroads
+                railroads: gameState.railroads,
+                actionLog: gameState.actionLog,
+                priorityDealHolder: gameState.priorityDealHolder
             };
             
             connections.forEach(conn => {
@@ -426,6 +451,17 @@
                     conn.send(message);
                 }
             });
+            updateUI();
+        }
+        
+        function logAction(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            gameState.actionLog.push({ time: timestamp, message });
+            // Keep only last 50 actions
+            if (gameState.actionLog.length > 50) {
+                gameState.actionLog.shift();
+            }
+            updateUI();
         }
         
         function initGame() {
@@ -557,38 +593,23 @@
             return null;
         }
         
-        function handleHexClick(hex) {
-            const currentPlayerId = gameState.players[gameState.currentPlayer].id;
-            if (currentPlayerId === gameState.myPlayerId) {
-                // Find which railroad the player can build for
-                const myShares = gameState.players.find(p => p.id === gameState.myPlayerId).shares;
-                if (myShares.length > 0) {
-                    const railroad = myShares[0].railroad;
-                    buildTrack(railroad, hex);
-                }
-            }
-        }
-        
         function buyShare(railroad) {
-            const currentPlayerId = gameState.players[gameState.currentPlayer].id;
-            if (currentPlayerId === gameState.myPlayerId && gameState.round === 'stock') {
-                const shareValue = gameState.railroads[railroad].shareValue || 20;
+            const myPlayer = gameState.players.find(p => p.id === gameState.myPlayerId);
+            const shareValue = gameState.railroads[railroad].shareValue || 20;
+            
+            if (myPlayer && myPlayer.money >= shareValue) {
+                const message = {
+                    type: 'buyShare',
+                    playerId: gameState.myPlayerId,
+                    railroad: railroad,
+                    shareValue: shareValue
+                };
                 
-                if (gameState.myMoney >= shareValue) {
-                    const message = {
-                        type: 'buyShare',
-                        playerId: gameState.myPlayerId,
-                        railroad: railroad,
-                        shareValue: shareValue
-                    };
-                    
-                    if (isHost) {
-                        processBuyShare(gameState.myPlayerId, railroad, shareValue);
-                        broadcastGameState();
-                        updateUI();
-                    } else {
-                        connections[0].send(message);
-                    }
+                if (isHost) {
+                    processBuyShare(gameState.myPlayerId, railroad, shareValue);
+                    broadcastGameState();
+                } else {
+                    connections[0].send(message);
                 }
             }
         }
@@ -601,36 +622,12 @@
                 
                 gameState.railroads[railroad].shares.push(playerId);
                 gameState.railroads[railroad].treasury += shareValue;
-                gameState.railroads[railroad].shareValue = shareValue;
-                
-                if (player.id === gameState.myPlayerId) {
-                    gameState.myMoney = player.money;
+                if (!gameState.railroads[railroad].shareValue) {
+                    gameState.railroads[railroad].shareValue = shareValue;
                 }
                 
-                nextTurn();
+                logAction(`${player.name} bought ${railroad} share for ₧${shareValue}`);
             }
-        }
-        
-        function pass() {
-            const currentPlayerId = gameState.players[gameState.currentPlayer].id;
-            if (currentPlayerId === gameState.myPlayerId) {
-                const message = {
-                    type: 'pass',
-                    playerId: gameState.myPlayerId
-                };
-                
-                if (isHost) {
-                    processPass(gameState.myPlayerId);
-                    broadcastGameState();
-                    updateUI();
-                } else {
-                    connections[0].send(message);
-                }
-            }
-        }
-        
-        function processPass(playerId) {
-            nextTurn();
         }
         
         function buildTrack(railroad, hex) {
@@ -645,9 +642,8 @@
                 };
                 
                 if (isHost) {
-                    processBuildTrack(gameState.myPlayerId, railroad, hex);
+                    processBuildTrack(gameState.myPlayerId, railroad, { row: hex.row, col: hex.col });
                     broadcastGameState();
-                    updateUI();
                 } else {
                     connections[0].send(message);
                 }
@@ -657,6 +653,7 @@
         function processBuildTrack(playerId, railroad, hexData) {
             const hex = gameState.hexMap.find(h => h.row === hexData.row && h.col === hexData.col);
             const cost = hex.terrain === 'difficult' ? 8 : 4;
+            const player = gameState.players.find(p => p.id === playerId);
             
             if (hex && gameState.railroads[railroad].treasury >= cost) {
                 gameState.railroads[railroad].treasury -= cost;
@@ -668,26 +665,87 @@
                     gameState.railroads[railroad].dividends += hex.isMajorCity ? 2 : 1;
                 }
                 
-                nextTurn();
+                const terrain = hex.isMajorCity ? 'major city' : hex.isCity ? 'city' : hex.terrain;
+                logAction(`${player.name} built ${railroad} track on ${terrain} (cost ₧${cost})`);
             }
         }
         
-        function nextTurn() {
-            gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
+        function claimPriority() {
+            const message = {
+                type: 'claimPriority',
+                playerId: gameState.myPlayerId
+            };
             
-            if (gameState.currentPlayer === 0) {
-                if (gameState.round === 'stock') {
-                    gameState.round = 'build';
-                } else {
-                    gameState.roundNumber++;
-                    gameState.round = 'stock';
-                }
+            if (isHost) {
+                processClaimPriority(gameState.myPlayerId);
+                broadcastGameState();
+            } else {
+                connections[0].send(message);
             }
         }
         
-        function startStockRound() {
-            gameState.round = 'stock';
-            updateUI();
+        function processClaimPriority(playerId) {
+            const player = gameState.players.find(p => p.id === playerId);
+            gameState.priorityDealHolder = playerId;
+            logAction(`${player.name} claimed the Priority Deal token`);
+        }
+        
+        function nextRound() {
+            const message = {
+                type: 'nextRound'
+            };
+            
+            if (isHost) {
+                processNextRound();
+                broadcastGameState();
+            } else {
+                connections[0].send(message);
+            }
+        }
+        
+        function processNextRound() {
+            if (gameState.round === 'stock') {
+                gameState.round = 'build';
+                logAction(`Starting Build Round ${gameState.roundNumber}`);
+            } else {
+                gameState.round = 'stock';
+                gameState.roundNumber++;
+                logAction(`Starting Stock Round ${gameState.roundNumber}`);
+            }
+        }
+        
+        function payAllDividends() {
+            const colors = ['purple', 'orange', 'blue', 'yellow', 'red'];
+            colors.forEach(railroad => {
+                if (gameState.railroads[railroad].shares.length > 0) {
+                    processPayDividends(railroad);
+                }
+            });
+            
+            if (isHost) {
+                broadcastGameState();
+            } else {
+                connections[0].send({ type: 'payDividends' });
+            }
+        }
+        
+        function processPayDividends(railroad) {
+            const dividendRate = gameState.railroads[railroad].dividends * 2; // Simplified dividend calculation
+            
+            gameState.railroads[railroad].shares.forEach(playerId => {
+                const player = gameState.players.find(p => p.id === playerId);
+                if (player) {
+                    player.money += dividendRate;
+                }
+            });
+            
+            logAction(`${railroad} paid ₧${dividendRate} per share in dividends`);
+        }
+        
+        function resetGame() {
+            if (confirm('Reset the entire game?')) {
+                location.reload();
+            }
         }
         
         function render() {
@@ -762,45 +820,84 @@
             document.getElementById('roundInfo').textContent = 
                 `Round: ${gameState.round === 'stock' ? 'Stock' : 'Build'} ${gameState.roundNumber}`;
             
-            // Update current player
-            if (gameState.players.length > 0) {
-                document.getElementById('turnInfo').textContent = 
-                    `Current: ${gameState.players[gameState.currentPlayer].name}`;
+            // Update priority deal holder
+            if (gameState.priorityDealHolder) {
+                const holder = gameState.players.find(p => p.id === gameState.priorityDealHolder);
+                document.getElementById('priorityInfo').textContent = 
+                    `Priority Deal: ${holder ? holder.name : 'None'}`;
             }
             
-            // Update money
-            const myPlayer = gameState.players.find(p => p.id === gameState.myPlayerId);
-            if (myPlayer) {
-                document.getElementById('moneyInfo').textContent = `Money: ₧${myPlayer.money}`;
-            }
-            
-            // Update player list
+            // Update player list with money and shares
             const playersList = document.getElementById('players');
             playersList.innerHTML = '';
-            gameState.players.forEach((player, idx) => {
+            gameState.players.forEach((player) => {
                 const div = document.createElement('div');
                 div.className = 'player-item';
-                if (idx === gameState.currentPlayer) {
+                if (player.id === gameState.priorityDealHolder) {
                     div.classList.add('current-player');
                 }
+                
+                const sharesSummary = {};
+                player.shares.forEach(share => {
+                    sharesSummary[share.railroad] = (sharesSummary[share.railroad] || 0) + 1;
+                });
+                
+                const sharesText = Object.entries(sharesSummary)
+                    .map(([railroad, count]) => `${railroad[0].toUpperCase()}:${count}`)
+                    .join(' ');
+                
                 div.innerHTML = `
-                    <span>${player.name}</span>
-                    <span>₧${player.money}</span>
+                    <div>${player.name}</div>
+                    <div>₧${player.money} ${sharesText ? `[${sharesText}]` : ''}</div>
                 `;
                 playersList.appendChild(div);
             });
             
-            // Update share info
+            // Update action log
+            const actionsDiv = document.getElementById('actions');
+            actionsDiv.innerHTML = '';
+            gameState.actionLog.slice(-10).reverse().forEach(action => {
+                const div = document.createElement('div');
+                div.style.padding = '5px';
+                div.style.borderBottom = '1px solid rgba(255,255,255,0.2)';
+                div.innerHTML = `<small>${action.time}</small><br>${action.message}`;
+                actionsDiv.appendChild(div);
+            });
+            
+            // Update share info with treasury
             const shareInfo = document.getElementById('shareInfo');
-            let shareText = '<strong>Share Values:</strong><br>';
+            let shareText = '<strong>Railroads:</strong><br>';
             for (const [color, railroad] of Object.entries(gameState.railroads)) {
-                if (railroad.shareValue > 0) {
-                    shareText += `${color}: ₧${railroad.shareValue}<br>`;
-                }
+                shareText += `<div style="margin: 5px 0;">
+                    <strong style="color: ${getColorHex(color)}">${color}:</strong><br>
+                    Value: ₧${railroad.shareValue || 20} | 
+                    Treasury: ₧${railroad.treasury} |
+                    Shares: ${railroad.shares.length}/5
+                </div>`;
             }
             shareInfo.innerHTML = shareText;
             
+            // Update railroad buttons to show current values
+            const colors = ['purple', 'orange', 'blue', 'yellow', 'red'];
+            colors.forEach(color => {
+                const btn = document.querySelector(`.railroad-${color}`);
+                if (btn) {
+                    btn.innerHTML = `${color[0].toUpperCase()}<br><small>₧${gameState.railroads[color].shareValue || 20}</small>`;
+                }
+            });
+            
             render();
+        }
+        
+        function getColorHex(color) {
+            const colors = {
+                purple: '#8B008B',
+                orange: '#FF8C00',
+                blue: '#4169E1',
+                yellow: '#FFD700',
+                red: '#DC143C'
+            };
+            return colors[color];
         }
         
         // Start rendering
