@@ -1,1 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iberian Gauge P2P</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.1/peerjs.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #lobby {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .lobby-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .lobby-title {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        #game {
+            display: none;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        #gameCanvas:active {
+            cursor: grabbing;
+        }
+        
+        .hud {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        #gameInfo {
+            top: 20px;
+            left: 20px;
+            min-width: 250px;
+        }
+        
+        #playerList {
+            top: 20px;
+            right: 20px;
+            min-width: 200px;
+        }
+        
+        #controls {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        
+        #sharePanel {
+            bottom: 20px;
+            left: 20px;
+            max-width: 300px;
+        }
+        
+        .railroad-shares {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .railroad-btn {
+            padding: 10px;
+            border-radius: 5px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .railroad-btn:hover {
+            transform: scale(1.05);
+            border-color: white;
+        }
+        
+        .railroad-purple { background: #8B008B; color: white; }
+        .railroad-orange { background: #FF8C00; color: white; }
+        .railroad-blue { background: #4169E1; color: white; }
+        .railroad-yellow { background: #FFD700; color: black; }
+        .railroad-red { background: #DC143C; color: white; }
+        
+        .player-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .current-player {
+            background: rgba(102, 126, 234, 0.3);
+            border: 2px solid #667eea;
+        }
+        
+        .status-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .hex {
+            transition: fill 0.3s;
+        }
+        
+        .hex:hover {
+            filter: brightness(1.2);
+        }
+        
+        .locomotive {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="lobby">
+        <div class="lobby-card">
+            <h1 class="lobby-title">Iberian Gauge</h1>
+            <div class="input-group">
+                <label>Your Name</label>
+                <input type="text" id="playerName" placeholder="Enter your name" value="Player">
+            </div>
+            <div class="input-group">
+                <label>Room ID (leave empty to create new room)</label>
+                <input type="text" id="roomId" placeholder="Enter room ID to join">
+            </div>
+            <button class="btn" id="startBtn">Start / Join Game</button>
+            <div id="connectionStatus" style="margin-top: 20px; text-align: center; color: #666;"></div>
+        </div>
+    </div>
+    
+    <div id="game">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="gameInfo" class="hud">
+            <h3 style="margin-top: 0;">Game Info</h3>
+            <div id="roundInfo">Round: Stock 1</div>
+            <div id="turnInfo">Current Player: -</div>
+            <div id="moneyInfo">Your Money: ₧40</div>
+        </div>
+        
+        <div id="playerList" class="hud">
+            <h3 style="margin-top: 0;">Players</h3>
+            <div id="players"></div>
+        </div>
+        
+        <div id="sharePanel" class="hud">
+            <h3 style="margin-top: 0;">Railroad Shares</h3>
+            <div class="railroad-shares" id="railroadButtons"></div>
+            <div id="shareInfo" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div id="controls" class="hud">
+            <button class="btn" id="passBtn" style="width: auto;">Pass</button>
+            <button class="btn" id="buildBtn" style="width: auto;">Build Track</button>
+        </div>
+    </div>
 
+    <script>
+        // Game State
+        const gameState = {
+            players: [],
+            currentPlayer: 0,
+            round: 'stock',
+            roundNumber: 1,
+            railroads: {
+                purple: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
+                orange: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
+                blue: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
+                yellow: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
+                red: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] }
+            },
+            hexMap: [],
+            myPlayerId: null,
+            myMoney: 40,
+            priorityDeal: 0
+        };
+        
+        // P2P Connection
+        let peer = null;
+        let connections = [];
+        let isHost = false;
+        
+        // Canvas Setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let camera = { x: 0, y: 0, zoom: 1 };
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        
+        // Initialize
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        
+        function startGame() {
+            const playerName = document.getElementById('playerName').value || 'Player';
+            const roomId = document.getElementById('roomId').value;
+            
+            if (roomId) {
+                joinRoom(roomId, playerName);
+            } else {
+                createRoom(playerName);
+            }
+        }
+        
+        function createRoom(playerName) {
+            isHost = true;
+            const peerId = 'iberian-' + Math.random().toString(36).substr(2, 9);
+            
+            peer = new Peer(peerId);
+            
+            peer.on('open', (id) => {
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<strong>Room Created!</strong><br>Room ID: <code>${id}</code><br>Share this ID with other players`;
+                
+                gameState.myPlayerId = id;
+                gameState.players.push({
+                    id: id,
+                    name: playerName,
+                    money: 40,
+                    shares: [],
+                    connected: true
+                });
+                
+                setTimeout(() => {
+                    document.getElementById('lobby').style.display = 'none';
+                    document.getElementById('game').style.display = 'block';
+                    initGame();
+                }, 2000);
+            });
+            
+            peer.on('connection', (conn) => {
+                connections.push(conn);
+                setupConnection(conn);
+            });
+        }
+        
+        function joinRoom(hostId, playerName) {
+            const peerId = 'iberian-' + Math.random().toString(36).substr(2, 9);
+            peer = new Peer(peerId);
+            
+            peer.on('open', (id) => {
+                gameState.myPlayerId = id;
+                const conn = peer.connect(hostId);
+                
+                conn.on('open', () => {
+                    connections.push(conn);
+                    conn.send({
+                        type: 'join',
+                        playerId: id,
+                        playerName: playerName
+                    });
+                    
+                    document.getElementById('lobby').style.display = 'none';
+                    document.getElementById('game').style.display = 'block';
+                    initGame();
+                });
+                
+                setupConnection(conn);
+            });
+        }
+        
+        function setupConnection(conn) {
+            conn.on('data', (data) => {
+                handleMessage(data, conn);
+            });
+            
+            conn.on('close', () => {
+                connections = connections.filter(c => c !== conn);
+            });
+        }
+        
+        function handleMessage(data, conn) {
+            switch(data.type) {
+                case 'join':
+                    if (isHost) {
+                        gameState.players.push({
+                            id: data.playerId,
+                            name: data.playerName,
+                            money: 40,
+                            shares: [],
+                            connected: true
+                        });
+                        broadcastGameState();
+                        updateUI();
+                    }
+                    break;
+                case 'gameState':
+                    gameState.players = data.players;
+                    gameState.currentPlayer = data.currentPlayer;
+                    gameState.round = data.round;
+                    gameState.roundNumber = data.roundNumber;
+                    gameState.railroads = data.railroads;
+                    updateUI();
+                    break;
+                case 'buyShare':
+                    if (isHost) {
+                        processBuyShare(data.playerId, data.railroad, data.shareValue);
+                        broadcastGameState();
+                    }
+                    break;
+                case 'pass':
+                    if (isHost) {
+                        processPass(data.playerId);
+                        broadcastGameState();
+                    }
+                    break;
+                case 'buildTrack':
+                    if (isHost) {
+                        processBuildTrack(data.playerId, data.railroad, data.hex);
+                        broadcastGameState();
+                    }
+                    break;
+            }
+        }
+        
+        function broadcastGameState() {
+            const message = {
+                type: 'gameState',
+                players: gameState.players,
+                currentPlayer: gameState.currentPlayer,
+                round: gameState.round,
+                roundNumber: gameState.roundNumber,
+                railroads: gameState.railroads
+            };
+            
+            connections.forEach(conn => {
+                if (conn.open) {
+                    conn.send(message);
+                }
+            });
+        }
+        
+        function initGame() {
+            setupCanvas();
+            generateHexMap();
+            setupEventListeners();
+            updateUI();
+            
+            if (isHost) {
+                startStockRound();
+            }
+        }
+        
+        function setupCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                render();
+            });
+        }
+        
+        function generateHexMap() {
+            const hexSize = 30;
+            const rows = 15;
+            const cols = 20;
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const x = col * hexSize * 1.5;
+                    const y = row * hexSize * Math.sqrt(3) + (col % 2 ? hexSize * Math.sqrt(3) / 2 : 0);
+                    
+                    const terrainType = Math.random() > 0.7 ? 'difficult' : 'easy';
+                    const isCity = Math.random() > 0.9;
+                    const isMajorCity = isCity && Math.random() > 0.7;
+                    
+                    gameState.hexMap.push({
+                        x, y,
+                        row, col,
+                        terrain: terrainType,
+                        isCity,
+                        isMajorCity,
+                        railroad: null,
+                        locomotives: []
+                    });
+                }
+            }
+        }
+        
+        function setupEventListeners() {
+            // Canvas dragging
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                dragStart.x = e.clientX - camera.x;
+                dragStart.y = e.clientY - camera.y;
+            });
+            
+            canvas.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    camera.x = e.clientX - dragStart.x;
+                    camera.y = e.clientY - dragStart.y;
+                    render();
+                }
+            });
+            
+            canvas.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomSpeed = 0.1;
+                if (e.deltaY < 0) {
+                    camera.zoom = Math.min(2, camera.zoom + zoomSpeed);
+                } else {
+                    camera.zoom = Math.max(0.5, camera.zoom - zoomSpeed);
+                }
+                render();
+            });
+            
+            // Click on hex
+            canvas.addEventListener('click', (e) => {
+                if (gameState.round === 'build') {
+                    const hex = getHexAtPoint(e.clientX, e.clientY);
+                    if (hex) {
+                        handleHexClick(hex);
+                    }
+                }
+            });
+            
+            // Railroad buttons
+            const colors = ['purple', 'orange', 'blue', 'yellow', 'red'];
+            const buttonsContainer = document.getElementById('railroadButtons');
+            
+            colors.forEach(color => {
+                const btn = document.createElement('div');
+                btn.className = `railroad-btn railroad-${color}`;
+                btn.textContent = color[0].toUpperCase();
+                btn.onclick = () => buyShare(color);
+                buttonsContainer.appendChild(btn);
+            });
+            
+            // Control buttons
+            document.getElementById('passBtn').onclick = pass;
+            document.getElementById('buildBtn').onclick = () => {
+                if (gameState.round === 'stock') {
+                    gameState.round = 'build';
+                    updateUI();
+                }
+            };
+        }
+        
+        function getHexAtPoint(x, y) {
+            const hexSize = 30 * camera.zoom;
+            x = (x - camera.x) / camera.zoom;
+            y = (y - camera.y) / camera.zoom;
+            
+            for (const hex of gameState.hexMap) {
+                const dx = x - hex.x - hexSize;
+                const dy = y - hex.y - hexSize;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < hexSize) {
+                    return hex;
+                }
+            }
+            return null;
+        }
+        
+        function handleHexClick(hex) {
+            const currentPlayerId = gameState.players[gameState.currentPlayer].id;
+            if (currentPlayerId === gameState.myPlayerId) {
+                // Find which railroad the player can build for
+                const myShares = gameState.players.find(p => p.id === gameState.myPlayerId).shares;
+                if (myShares.length > 0) {
+                    const railroad = myShares[0].railroad;
+                    buildTrack(railroad, hex);
+                }
+            }
+        }
+        
+        function buyShare(railroad) {
+            const currentPlayerId = gameState.players[gameState.currentPlayer].id;
+            if (currentPlayerId === gameState.myPlayerId && gameState.round === 'stock') {
+                const shareValue = gameState.railroads[railroad].shareValue || 20;
+                
+                if (gameState.myMoney >= shareValue) {
+                    const message = {
+                        type: 'buyShare',
+                        playerId: gameState.myPlayerId,
+                        railroad: railroad,
+                        shareValue: shareValue
+                    };
+                    
+                    if (isHost) {
+                        processBuyShare(gameState.myPlayerId, railroad, shareValue);
+                        broadcastGameState();
+                        updateUI();
+                    } else {
+                        connections[0].send(message);
+                    }
+                }
+            }
+        }
+        
+        function processBuyShare(playerId, railroad, shareValue) {
+            const player = gameState.players.find(p => p.id === playerId);
+            if (player && player.money >= shareValue) {
+                player.money -= shareValue;
+                player.shares.push({ railroad, value: shareValue });
+                
+                gameState.railroads[railroad].shares.push(playerId);
+                gameState.railroads[railroad].treasury += shareValue;
+                gameState.railroads[railroad].shareValue = shareValue;
+                
+                if (player.id === gameState.myPlayerId) {
+                    gameState.myMoney = player.money;
+                }
+                
+                nextTurn();
+            }
+        }
+        
+        function pass() {
+            const currentPlayerId = gameState.players[gameState.currentPlayer].id;
+            if (currentPlayerId === gameState.myPlayerId) {
+                const message = {
+                    type: 'pass',
+                    playerId: gameState.myPlayerId
+                };
+                
+                if (isHost) {
+                    processPass(gameState.myPlayerId);
+                    broadcastGameState();
+                    updateUI();
+                } else {
+                    connections[0].send(message);
+                }
+            }
+        }
+        
+        function processPass(playerId) {
+            nextTurn();
+        }
+        
+        function buildTrack(railroad, hex) {
+            const cost = hex.terrain === 'difficult' ? 8 : 4;
+            
+            if (gameState.railroads[railroad].treasury >= cost) {
+                const message = {
+                    type: 'buildTrack',
+                    playerId: gameState.myPlayerId,
+                    railroad: railroad,
+                    hex: { row: hex.row, col: hex.col }
+                };
+                
+                if (isHost) {
+                    processBuildTrack(gameState.myPlayerId, railroad, hex);
+                    broadcastGameState();
+                    updateUI();
+                } else {
+                    connections[0].send(message);
+                }
+            }
+        }
+        
+        function processBuildTrack(playerId, railroad, hexData) {
+            const hex = gameState.hexMap.find(h => h.row === hexData.row && h.col === hexData.col);
+            const cost = hex.terrain === 'difficult' ? 8 : 4;
+            
+            if (hex && gameState.railroads[railroad].treasury >= cost) {
+                gameState.railroads[railroad].treasury -= cost;
+                hex.locomotives.push(railroad);
+                gameState.railroads[railroad].locomotives.push({ row: hex.row, col: hex.col });
+                
+                // Update dividends if city
+                if (hex.isCity) {
+                    gameState.railroads[railroad].dividends += hex.isMajorCity ? 2 : 1;
+                }
+                
+                nextTurn();
+            }
+        }
+        
+        function nextTurn() {
+            gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
+            
+            if (gameState.currentPlayer === 0) {
+                if (gameState.round === 'stock') {
+                    gameState.round = 'build';
+                } else {
+                    gameState.roundNumber++;
+                    gameState.round = 'stock';
+                }
+            }
+        }
+        
+        function startStockRound() {
+            gameState.round = 'stock';
+            updateUI();
+        }
+        
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.save();
+            ctx.translate(camera.x, camera.y);
+            ctx.scale(camera.zoom, camera.zoom);
+            
+            const hexSize = 30;
+            
+            // Draw hexagons
+            gameState.hexMap.forEach(hex => {
+                ctx.save();
+                ctx.translate(hex.x + hexSize, hex.y + hexSize);
+                
+                // Draw hex
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = Math.PI / 3 * i;
+                    const x = hexSize * Math.cos(angle);
+                    const y = hexSize * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                
+                // Fill based on terrain
+                if (hex.isMajorCity) {
+                    ctx.fillStyle = '#FFD700';
+                } else if (hex.isCity) {
+                    ctx.fillStyle = '#87CEEB';
+                } else if (hex.terrain === 'difficult') {
+                    ctx.fillStyle = '#8B7355';
+                } else {
+                    ctx.fillStyle = '#90EE90';
+                }
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // Draw locomotives
+                if (hex.locomotives.length > 0) {
+                    hex.locomotives.forEach((railroad, idx) => {
+                        const colors = {
+                            purple: '#8B008B',
+                            orange: '#FF8C00',
+                            blue: '#4169E1',
+                            yellow: '#FFD700',
+                            red: '#DC143C'
+                        };
+                        
+                        ctx.beginPath();
+                        ctx.arc(idx * 10 - 10, 0, 8, 0, Math.PI * 2);
+                        ctx.fillStyle = colors[railroad];
+                        ctx.fill();
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    });
+                }
+                
+                ctx.restore();
+            });
+            
+            ctx.restore();
+        }
+        
+        function updateUI() {
+            // Update round info
+            document.getElementById('roundInfo').textContent = 
+                `Round: ${gameState.round === 'stock' ? 'Stock' : 'Build'} ${gameState.roundNumber}`;
+            
+            // Update current player
+            if (gameState.players.length > 0) {
+                document.getElementById('turnInfo').textContent = 
+                    `Current: ${gameState.players[gameState.currentPlayer].name}`;
+            }
+            
+            // Update money
+            const myPlayer = gameState.players.find(p => p.id === gameState.myPlayerId);
+            if (myPlayer) {
+                document.getElementById('moneyInfo').textContent = `Money: ₧${myPlayer.money}`;
+            }
+            
+            // Update player list
+            const playersList = document.getElementById('players');
+            playersList.innerHTML = '';
+            gameState.players.forEach((player, idx) => {
+                const div = document.createElement('div');
+                div.className = 'player-item';
+                if (idx === gameState.currentPlayer) {
+                    div.classList.add('current-player');
+                }
+                div.innerHTML = `
+                    <span>${player.name}</span>
+                    <span>₧${player.money}</span>
+                `;
+                playersList.appendChild(div);
+            });
+            
+            // Update share info
+            const shareInfo = document.getElementById('shareInfo');
+            let shareText = '<strong>Share Values:</strong><br>';
+            for (const [color, railroad] of Object.entries(gameState.railroads)) {
+                if (railroad.shareValue > 0) {
+                    shareText += `${color}: ₧${railroad.shareValue}<br>`;
+                }
+            }
+            shareInfo.innerHTML = shareText;
+            
+            render();
+        }
+        
+        // Start rendering
+        setInterval(render, 1000/30);
+    </script>
+</body>
+</html>
