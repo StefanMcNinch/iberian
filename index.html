@@ -251,6 +251,14 @@
             <h3 style="margin-top: 0;">Railroad Shares</h3>
             <div class="railroad-shares" id="railroadButtons"></div>
             <div id="shareInfo" style="margin-top: 10px;"></div>
+            <div style="margin-top: 10px; font-size: 11px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px;">
+                <strong>Terrain Costs:</strong><br>
+                🟢 Easy: ₧4 | 🟫 Difficult: ₧8<br>
+                🏘️ City: ₧4 | 🏛️ Major City: ₧4<br>
+                <small>Cities give +1 Div, Major +2 Div & +₧2 Share Value</small><br>
+                <strong style="margin-top: 5px; display: block;">Controls:</strong>
+                <small>WASD/Arrows: Pan | +/-: Zoom | R: Reset View</small>
+            </div>
         </div>
         
         <div id="controls" class="hud">
@@ -267,16 +275,40 @@
             round: 'stock',
             roundNumber: 1,
             railroads: {
-                purple: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
-                orange: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
-                blue: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
-                yellow: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
-                red: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] }
+                purple: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] },
+                orange: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] },
+                blue: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] },
+                yellow: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] },
+                red: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] }
             },
             hexMap: [],
             myPlayerId: null,
             actionLog: [],
-            priorityDealHolder: null
+            priorityDealHolder: null,
+            // Dividend track values from the actual board
+            dividendTrack: [
+                { purple: 0, orange: 0, blue: 0, yellow: 0, red: 0 },
+                { purple: 0, orange: 0, blue: 0, yellow: 0, red: 0 },
+                { purple: 0, orange: 0, blue: 0, yellow: 0, red: 0 },
+                { purple: 0, orange: 2, blue: 2, yellow: 0, red: 0 },
+                { purple: 2, orange: 2, blue: 2, yellow: 2, red: 0 },
+                { purple: 2, orange: 4, blue: 4, yellow: 2, red: 2 },
+                { purple: 4, orange: 4, blue: 4, yellow: 4, red: 2 },
+                { purple: 4, orange: 6, blue: 6, yellow: 4, red: 4 },
+                { purple: 6, orange: 6, blue: 6, yellow: 6, red: 4 },
+                { purple: 6, orange: 8, blue: 8, yellow: 6, red: 6 },
+                { purple: 8, orange: 8, blue: 8, yellow: 8, red: 6 },
+                { purple: 8, orange: 10, blue: 10, yellow: 8, red: 8 },
+                { purple: 10, orange: 10, blue: 10, yellow: 10, red: 8 },
+                { purple: 10, orange: 12, blue: 12, yellow: 10, red: 10 },
+                { purple: 12, orange: 12, blue: 12, yellow: 12, red: 10 },
+                { purple: 12, orange: 14, blue: 14, yellow: 12, red: 12 },
+                { purple: 14, orange: 14, blue: 14, yellow: 14, red: 12 },
+                { purple: 14, orange: 16, blue: 16, yellow: 14, red: 14 },
+                { purple: 16, orange: 16, blue: 16, yellow: 16, red: 14 },
+                { purple: 16, orange: 18, blue: 18, yellow: 16, red: 16 },
+                { purple: 18, orange: 18, blue: 18, yellow: 18, red: 16 }
+            ]
         };
         
         // P2P Connection
@@ -394,6 +426,9 @@
                     gameState.railroads = data.railroads;
                     gameState.actionLog = data.actionLog || [];
                     gameState.priorityDealHolder = data.priorityDealHolder;
+                    if (data.hexMap) {
+                        gameState.hexMap = data.hexMap;
+                    }
                     updateUI();
                     break;
                 case 'buyShare':
@@ -443,7 +478,8 @@
                 roundNumber: gameState.roundNumber,
                 railroads: gameState.railroads,
                 actionLog: gameState.actionLog,
-                priorityDealHolder: gameState.priorityDealHolder
+                priorityDealHolder: gameState.priorityDealHolder,
+                hexMap: gameState.hexMap
             };
             
             connections.forEach(conn => {
@@ -479,6 +515,11 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             
+            // Center the map initially
+            camera.x = 50;
+            camera.y = 50;
+            camera.zoom = 0.8;
+            
             window.addEventListener('resize', () => {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
@@ -488,29 +529,134 @@
         
         function generateHexMap() {
             const hexSize = 30;
-            const rows = 15;
-            const cols = 20;
             
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    const x = col * hexSize * 1.5;
-                    const y = row * hexSize * Math.sqrt(3) + (col % 2 ? hexSize * Math.sqrt(3) / 2 : 0);
-                    
-                    const terrainType = Math.random() > 0.7 ? 'difficult' : 'easy';
-                    const isCity = Math.random() > 0.9;
-                    const isMajorCity = isCity && Math.random() > 0.7;
-                    
-                    gameState.hexMap.push({
-                        x, y,
-                        row, col,
-                        terrain: terrainType,
-                        isCity,
-                        isMajorCity,
-                        railroad: null,
-                        locomotives: []
-                    });
-                }
-            }
+            // Define the Iberian Peninsula map layout
+            // Format: [row, col, terrain, cityName (if city)]
+            const mapData = [
+                // Portugal coast and cities
+                [2, 2, 'easy', 'Porto'],
+                [3, 2, 'easy'],
+                [4, 2, 'easy', 'Coimbra'],
+                [5, 2, 'easy'],
+                [6, 2, 'easy', 'Lisboa'],
+                [7, 2, 'easy'],
+                [8, 2, 'easy', 'Faro'],
+                
+                // Northern Spain
+                [1, 5, 'easy', 'Gijón'],
+                [1, 7, 'difficult'],
+                [1, 9, 'easy', 'Santander'],
+                [1, 11, 'easy', 'Bilbao'],
+                [1, 13, 'difficult'],
+                [1, 15, 'easy', 'Pamplona'],
+                
+                // Galicia
+                [2, 3, 'easy', 'A Coruña'],
+                [3, 3, 'easy', 'Santiago'],
+                [3, 4, 'difficult', 'Ourense'],
+                
+                // Central Portugal/Spain border
+                [4, 3, 'difficult'],
+                [4, 4, 'difficult'],
+                [5, 3, 'difficult'],
+                [5, 4, 'difficult', 'Salamanca'],
+                [5, 5, 'easy'],
+                
+                // Madrid region
+                [4, 6, 'difficult'],
+                [5, 6, 'difficult', 'Valladolid'],
+                [6, 6, 'difficult'],
+                [6, 7, 'easy', 'Madrid'],
+                [7, 7, 'easy'],
+                [7, 6, 'easy', 'Toledo'],
+                
+                // Eastern Spain
+                [2, 13, 'difficult', 'Zaragoza'],
+                [3, 14, 'difficult'],
+                [3, 15, 'easy', 'Lleida'],
+                [2, 16, 'easy', 'Barcelona'],
+                [4, 15, 'easy', 'Tarragona'],
+                [5, 14, 'easy'],
+                [6, 14, 'easy', 'Valencia'],
+                [7, 13, 'easy', 'Alicante'],
+                
+                // Southern Spain
+                [8, 4, 'easy', 'Badajoz'],
+                [8, 5, 'difficult'],
+                [8, 6, 'easy', 'Ciudad Real'],
+                [9, 5, 'easy', 'Córdoba'],
+                [9, 6, 'easy'],
+                [10, 5, 'easy', 'Sevilla'],
+                [10, 6, 'easy', 'Granada'],
+                [10, 7, 'easy', 'Málaga'],
+                [10, 8, 'easy', 'Almería'],
+                [11, 5, 'easy', 'Cádiz'],
+                
+                // Fill in remaining terrain
+                [3, 5, 'difficult'],
+                [3, 6, 'difficult'],
+                [3, 7, 'difficult'],
+                [3, 8, 'difficult'],
+                [3, 9, 'difficult'],
+                [3, 10, 'difficult'],
+                [3, 11, 'difficult'],
+                [3, 12, 'difficult'],
+                [4, 5, 'difficult'],
+                [4, 7, 'difficult'],
+                [4, 8, 'difficult'],
+                [4, 9, 'difficult', 'Soria'],
+                [4, 10, 'difficult'],
+                [4, 11, 'difficult'],
+                [4, 12, 'difficult'],
+                [4, 13, 'difficult'],
+                [4, 14, 'difficult'],
+                [5, 7, 'difficult'],
+                [5, 8, 'difficult', 'Guadalajara'],
+                [5, 9, 'difficult'],
+                [5, 10, 'difficult', 'Cuenca'],
+                [5, 11, 'difficult'],
+                [5, 12, 'difficult', 'Teruel'],
+                [5, 13, 'difficult'],
+                [6, 8, 'easy'],
+                [6, 9, 'easy'],
+                [6, 10, 'easy'],
+                [6, 11, 'easy'],
+                [6, 12, 'easy', 'Castellón'],
+                [6, 13, 'easy'],
+                [7, 8, 'easy'],
+                [7, 9, 'easy', 'Albacete'],
+                [7, 10, 'easy'],
+                [7, 11, 'easy'],
+                [7, 12, 'easy'],
+                [8, 7, 'easy'],
+                [8, 8, 'easy'],
+                [8, 9, 'easy', 'Murcia'],
+                [8, 10, 'easy'],
+                [9, 7, 'easy', 'Jaén'],
+                [9, 8, 'easy'],
+                [9, 9, 'easy']
+            ];
+            
+            // Major cities (with urban bonus)
+            const majorCities = ['Madrid', 'Barcelona', 'Valencia', 'Sevilla', 'Lisboa', 
+                                 'Porto', 'Bilbao', 'Zaragoza', 'Málaga', 'Cádiz'];
+            
+            gameState.hexMap = [];
+            
+            mapData.forEach(([row, col, terrain, cityName]) => {
+                const x = col * hexSize * 1.5;
+                const y = row * hexSize * Math.sqrt(3) + (col % 2 ? hexSize * Math.sqrt(3) / 2 : 0);
+                
+                gameState.hexMap.push({
+                    x, y,
+                    row, col,
+                    terrain: terrain,
+                    isCity: !!cityName,
+                    isMajorCity: majorCities.includes(cityName),
+                    cityName: cityName || null,
+                    locomotives: []
+                });
+            });
         }
         
         function setupEventListeners() {
@@ -533,15 +679,67 @@
                 isDragging = false;
             });
             
+            // Mouse wheel zoom
             canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const zoomSpeed = 0.1;
+                const oldZoom = camera.zoom;
                 if (e.deltaY < 0) {
                     camera.zoom = Math.min(2, camera.zoom + zoomSpeed);
                 } else {
                     camera.zoom = Math.max(0.5, camera.zoom - zoomSpeed);
                 }
+                
+                // Zoom towards mouse position
+                const zoomRatio = camera.zoom / oldZoom;
+                camera.x = e.clientX - (e.clientX - camera.x) * zoomRatio;
+                camera.y = e.clientY - (e.clientY - camera.y) * zoomRatio;
+                
                 render();
+            });
+            
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                const moveSpeed = 30;
+                switch(e.key) {
+                    case 'ArrowUp':
+                    case 'w':
+                        camera.y += moveSpeed;
+                        render();
+                        break;
+                    case 'ArrowDown':
+                    case 's':
+                        camera.y -= moveSpeed;
+                        render();
+                        break;
+                    case 'ArrowLeft':
+                    case 'a':
+                        camera.x += moveSpeed;
+                        render();
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                        camera.x -= moveSpeed;
+                        render();
+                        break;
+                    case '+':
+                    case '=':
+                        camera.zoom = Math.min(2, camera.zoom + 0.1);
+                        render();
+                        break;
+                    case '-':
+                    case '_':
+                        camera.zoom = Math.max(0.5, camera.zoom - 0.1);
+                        render();
+                        break;
+                    case 'r':
+                        // Reset view
+                        camera.x = 50;
+                        camera.y = 50;
+                        camera.zoom = 0.8;
+                        render();
+                        break;
+                }
             });
             
             // Click on hex
@@ -595,7 +793,17 @@
         
         function buyShare(railroad) {
             const myPlayer = gameState.players.find(p => p.id === gameState.myPlayerId);
-            const shareValue = gameState.railroads[railroad].shareValue || 20;
+            
+            // Check if this is the first share
+            const isFirstShare = gameState.railroads[railroad].shares.length === 0;
+            let shareValue = gameState.railroads[railroad].shareValue;
+            
+            if (isFirstShare) {
+                // For first share, player can choose value between 12-36
+                const value = prompt(`Starting ${railroad} railroad. Choose share value (₧12-₧36):`, '20');
+                shareValue = Math.max(12, Math.min(36, parseInt(value) || 20));
+                gameState.railroads[railroad].shareValue = shareValue;
+            }
             
             if (myPlayer && myPlayer.money >= shareValue) {
                 const message = {
@@ -611,6 +819,8 @@
                 } else {
                     connections[0].send(message);
                 }
+            } else {
+                alert(`Insufficient funds. Need ₧${shareValue}, have ₧${myPlayer ? myPlayer.money : 0}`);
             }
         }
         
@@ -622,11 +832,14 @@
                 
                 gameState.railroads[railroad].shares.push(playerId);
                 gameState.railroads[railroad].treasury += shareValue;
-                if (!gameState.railroads[railroad].shareValue) {
-                    gameState.railroads[railroad].shareValue = shareValue;
-                }
+                gameState.railroads[railroad].shareValue = shareValue;
                 
-                logAction(`${player.name} bought ${railroad} share for ₧${shareValue}`);
+                const isFirstShare = gameState.railroads[railroad].shares.length === 1;
+                if (isFirstShare) {
+                    logAction(`${player.name} started ${railroad} railroad at ₧${shareValue} per share`);
+                } else {
+                    logAction(`${player.name} bought ${railroad} share for ₧${shareValue}`);
+                }
             }
         }
         
@@ -656,17 +869,53 @@
             const player = gameState.players.find(p => p.id === playerId);
             
             if (hex && gameState.railroads[railroad].treasury >= cost) {
+                // Check if railroad already has track here
+                if (hex.locomotives.includes(railroad)) {
+                    logAction(`${railroad} already has track at ${hex.cityName || 'this hex'}`);
+                    return;
+                }
+                
                 gameState.railroads[railroad].treasury -= cost;
                 hex.locomotives.push(railroad);
                 gameState.railroads[railroad].locomotives.push({ row: hex.row, col: hex.col });
                 
-                // Update dividends if city
-                if (hex.isCity) {
-                    gameState.railroads[railroad].dividends += hex.isMajorCity ? 2 : 1;
+                // Update dividends and share value if city
+                if (hex.isMajorCity) {
+                    gameState.railroads[railroad].dividends += 2;
+                    // Major cities increase share value
+                    gameState.railroads[railroad].shareValue = Math.min(gameState.railroads[railroad].shareValue + 2, 50);
+                    logAction(`${player.name} built ${railroad} track at ${hex.cityName} (Major City) - Cost: ₧${cost}, +2 Div Level, +₧2 Share Value`);
+                } else if (hex.isCity) {
+                    gameState.railroads[railroad].dividends += 1;
+                    logAction(`${player.name} built ${railroad} track at ${hex.cityName} (City) - Cost: ₧${cost}, +1 Div Level`);
+                } else {
+                    const terrain = hex.terrain === 'difficult' ? 'difficult terrain' : 'easy terrain';
+                    logAction(`${player.name} built ${railroad} track on ${terrain} - Cost: ₧${cost}`);
                 }
                 
-                const terrain = hex.isMajorCity ? 'major city' : hex.isCity ? 'city' : hex.terrain;
-                logAction(`${player.name} built ${railroad} track on ${terrain} (cost ₧${cost})`);
+                // Check for 5 major cities connection bonus
+                const majorCitiesConnected = gameState.railroads[railroad].locomotives.filter(loco => {
+                    const h = gameState.hexMap.find(hex => hex.row === loco.row && hex.col === loco.col);
+                    return h && h.isMajorCity;
+                }).length;
+                
+                if (majorCitiesConnected === 5) {
+                    // Special dividend for connecting 5 major cities
+                    const bonusAmounts = { purple: 12, orange: 14, blue: 14, yellow: 12, red: 10 };
+                    const bonus = bonusAmounts[railroad];
+                    
+                    gameState.railroads[railroad].shares.forEach(playerId => {
+                        const p = gameState.players.find(player => player.id === playerId);
+                        if (p) p.money += bonus;
+                    });
+                    
+                    const unpurchasedBonus = bonus * (5 - gameState.railroads[railroad].shares.length);
+                    gameState.railroads[railroad].treasury += unpurchasedBonus;
+                    
+                    logAction(`${railroad} connected 5 Major Cities! Special dividend: ₧${bonus}/share`);
+                }
+            } else {
+                logAction(`${railroad} cannot afford to build (needs ₧${cost}, has ₧${gameState.railroads[railroad].treasury})`);
             }
         }
         
@@ -704,14 +953,57 @@
         }
         
         function processNextRound() {
-            if (gameState.round === 'stock') {
-                gameState.round = 'build';
-                logAction(`Starting Build Round ${gameState.roundNumber}`);
-            } else {
-                gameState.round = 'stock';
-                gameState.roundNumber++;
-                logAction(`Starting Stock Round ${gameState.roundNumber}`);
+            // Round progression follows the pattern on the board
+            const roundSequence = [
+                'Stock 1', 'Build 1', 'Stock 2', 'Build 2', 'Stock 3', 'Build 3',
+                'Stock 4', 'Build 4', 'Stock 5', 'Build 5', 'Final Build'
+            ];
+            
+            let currentIndex = -1;
+            const currentRoundName = `${gameState.round === 'stock' ? 'Stock' : 'Build'} ${gameState.roundNumber}`;
+            
+            for (let i = 0; i < roundSequence.length; i++) {
+                if (roundSequence[i].includes(currentRoundName)) {
+                    currentIndex = i;
+                    break;
+                }
             }
+            
+            if (currentIndex >= 0 && currentIndex < roundSequence.length - 1) {
+                const nextRound = roundSequence[currentIndex + 1];
+                
+                if (nextRound.includes('Stock')) {
+                    gameState.round = 'stock';
+                    gameState.roundNumber = parseInt(nextRound.split(' ')[1]);
+                } else if (nextRound === 'Final Build') {
+                    gameState.round = 'build';
+                    gameState.roundNumber = 6; // Final build
+                } else {
+                    gameState.round = 'build';
+                    gameState.roundNumber = parseInt(nextRound.split(' ')[1]);
+                }
+                
+                logAction(`Advanced to ${nextRound}`);
+            } else {
+                logAction('Game has ended!');
+                calculateFinalScores();
+            }
+        }
+        
+        function calculateFinalScores() {
+            let scoreText = 'FINAL SCORES:\n';
+            gameState.players.forEach(player => {
+                let totalValue = player.money;
+                
+                player.shares.forEach(share => {
+                    totalValue += gameState.railroads[share.railroad].shareValue;
+                });
+                
+                scoreText += `${player.name}: ₧${totalValue}\n`;
+            });
+            
+            logAction(scoreText);
+            alert(scoreText);
         }
         
         function payAllDividends() {
@@ -730,16 +1022,26 @@
         }
         
         function processPayDividends(railroad) {
-            const dividendRate = gameState.railroads[railroad].dividends * 2; // Simplified dividend calculation
+            const dividendLevel = Math.min(gameState.railroads[railroad].dividends, gameState.dividendTrack.length - 1);
+            const dividendRate = gameState.dividendTrack[dividendLevel][railroad];
             
+            let totalPaid = 0;
             gameState.railroads[railroad].shares.forEach(playerId => {
                 const player = gameState.players.find(p => p.id === playerId);
                 if (player) {
                     player.money += dividendRate;
+                    totalPaid += dividendRate;
                 }
             });
             
-            logAction(`${railroad} paid ₧${dividendRate} per share in dividends`);
+            // Pay treasury for unpurchased shares
+            const unpurchasedShares = 5 - gameState.railroads[railroad].shares.length;
+            const treasuryDividend = dividendRate * unpurchasedShares;
+            gameState.railroads[railroad].treasury += treasuryDividend;
+            
+            if (dividendRate > 0) {
+                logAction(`${railroad} paid ₧${dividendRate} per share (Level ${dividendLevel}). Treasury: +₧${treasuryDividend}`);
+            }
         }
         
         function resetGame() {
@@ -751,6 +1053,13 @@
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // Draw background gradient to simulate ocean
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#4A90E2');
+            gradient.addColorStop(1, '#2C5F8D');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
             ctx.save();
             ctx.translate(camera.x, camera.y);
             ctx.scale(camera.zoom, camera.zoom);
@@ -761,6 +1070,12 @@
             gameState.hexMap.forEach(hex => {
                 ctx.save();
                 ctx.translate(hex.x + hexSize, hex.y + hexSize);
+                
+                // Draw hex shadow
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
                 
                 // Draw hex
                 ctx.beginPath();
@@ -775,18 +1090,62 @@
                 
                 // Fill based on terrain
                 if (hex.isMajorCity) {
-                    ctx.fillStyle = '#FFD700';
+                    // Major cities - gold with gradient
+                    const cityGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, hexSize);
+                    cityGrad.addColorStop(0, '#FFE066');
+                    cityGrad.addColorStop(1, '#F4B942');
+                    ctx.fillStyle = cityGrad;
                 } else if (hex.isCity) {
-                    ctx.fillStyle = '#87CEEB';
+                    // Regular cities - light blue
+                    ctx.fillStyle = '#A8DADC';
                 } else if (hex.terrain === 'difficult') {
-                    ctx.fillStyle = '#8B7355';
+                    // Mountains - brown gradient
+                    const mountGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, hexSize);
+                    mountGrad.addColorStop(0, '#8D6E63');
+                    mountGrad.addColorStop(1, '#6D4C41');
+                    ctx.fillStyle = mountGrad;
                 } else {
-                    ctx.fillStyle = '#90EE90';
+                    // Easy terrain - green gradient
+                    const greenGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, hexSize);
+                    greenGrad.addColorStop(0, '#81C784');
+                    greenGrad.addColorStop(1, '#66BB6A');
+                    ctx.fillStyle = greenGrad;
                 }
                 ctx.fill();
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 1;
+                
+                // Draw border
+                ctx.strokeStyle = '#2C3E50';
+                ctx.lineWidth = 1.5;
                 ctx.stroke();
+                
+                ctx.shadowColor = 'transparent';
+                
+                // Draw city icon for major cities
+                if (hex.isMajorCity) {
+                    ctx.fillStyle = '#2C3E50';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🏛️', 0, -5);
+                } else if (hex.isCity) {
+                    ctx.fillStyle = '#2C3E50';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🏘️', 0, -5);
+                }
+                
+                // Draw city name
+                if (hex.cityName) {
+                    ctx.fillStyle = '#000';
+                    ctx.font = 'bold 9px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(hex.cityName, 0, 10);
+                    ctx.fillText(hex.cityName, 0, 10);
+                }
                 
                 // Draw locomotives
                 if (hex.locomotives.length > 0) {
@@ -799,32 +1158,83 @@
                             red: '#DC143C'
                         };
                         
+                        const locX = (idx - (hex.locomotives.length - 1) / 2) * 12;
+                        
+                        // Draw locomotive token
                         ctx.beginPath();
-                        ctx.arc(idx * 10 - 10, 0, 8, 0, Math.PI * 2);
+                        ctx.arc(locX, -8, 6, 0, Math.PI * 2);
                         ctx.fillStyle = colors[railroad];
                         ctx.fill();
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 2;
                         ctx.stroke();
+                        
+                        // Draw small train icon
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 8px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('🚂', locX, -8);
                     });
+                }
+                
+                // Draw terrain cost indicator
+                if (!hex.isCity) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.font = '8px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`₧${hex.terrain === 'difficult' ? '8' : '4'}`, 0, 22);
                 }
                 
                 ctx.restore();
             });
             
+            // Draw connections between hexes with locomotives
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            
+            const railroadColors = ['purple', 'orange', 'blue', 'yellow', 'red'];
+            railroadColors.forEach(railroad => {
+                const locos = gameState.railroads[railroad].locomotives;
+                if (locos.length > 1) {
+                    ctx.beginPath();
+                    locos.forEach((loco, idx) => {
+                        const hex = gameState.hexMap.find(h => h.row === loco.row && h.col === loco.col);
+                        if (hex) {
+                            if (idx === 0) {
+                                ctx.moveTo(hex.x + hexSize, hex.y + hexSize);
+                            } else {
+                                ctx.lineTo(hex.x + hexSize, hex.y + hexSize);
+                            }
+                        }
+                    });
+                    ctx.strokeStyle = getColorHex(railroad);
+                    ctx.stroke();
+                }
+            });
+            
+            ctx.setLineDash([]);
             ctx.restore();
         }
         
         function updateUI() {
-            // Update round info
-            document.getElementById('roundInfo').textContent = 
-                `Round: ${gameState.round === 'stock' ? 'Stock' : 'Build'} ${gameState.roundNumber}`;
+            // Update round info with proper formatting
+            let roundDisplay = gameState.round === 'stock' ? 'Stock' : 'Build';
+            if (gameState.round === 'build' && gameState.roundNumber === 6) {
+                roundDisplay = 'Final Build';
+            } else {
+                roundDisplay += ` ${gameState.roundNumber}`;
+            }
+            document.getElementById('roundInfo').textContent = `Round: ${roundDisplay}`;
             
             // Update priority deal holder
             if (gameState.priorityDealHolder) {
                 const holder = gameState.players.find(p => p.id === gameState.priorityDealHolder);
                 document.getElementById('priorityInfo').textContent = 
                     `Priority Deal: ${holder ? holder.name : 'None'}`;
+            } else {
+                document.getElementById('priorityInfo').textContent = 'Priority Deal: None';
             }
             
             // Update player list with money and shares
@@ -864,15 +1274,17 @@
                 actionsDiv.appendChild(div);
             });
             
-            // Update share info with treasury
+            // Update share info with treasury and dividend info
             const shareInfo = document.getElementById('shareInfo');
             let shareText = '<strong>Railroads:</strong><br>';
             for (const [color, railroad] of Object.entries(gameState.railroads)) {
-                shareText += `<div style="margin: 5px 0;">
-                    <strong style="color: ${getColorHex(color)}">${color}:</strong><br>
-                    Value: ₧${railroad.shareValue || 20} | 
-                    Treasury: ₧${railroad.treasury} |
-                    Shares: ${railroad.shares.length}/5
+                const dividendLevel = Math.min(railroad.dividends, gameState.dividendTrack.length - 1);
+                const currentDividend = gameState.dividendTrack[dividendLevel][color];
+                
+                shareText += `<div style="margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                    <strong style="color: ${getColorHex(color)}">${color.toUpperCase()}</strong><br>
+                    Share: ₧${railroad.shareValue} | Treasury: ₧${railroad.treasury}<br>
+                    Shares: ${railroad.shares.length}/5 | Div Lvl: ${railroad.dividends} (₧${currentDividend}/share)
                 </div>`;
             }
             shareInfo.innerHTML = shareText;
