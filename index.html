@@ -9,10 +9,7 @@
         body {
             margin: 0;
             font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            background: #8B7766;
             overflow: hidden;
         }
         
@@ -22,7 +19,7 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background: rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         
         .lobby-card {
@@ -86,14 +83,136 @@
             transform: translateY(-2px);
         }
         
-        .btn:active {
-            transform: translateY(0);
-        }
-        
         #game {
             display: none;
+            width: 100vw;
             height: 100vh;
             position: relative;
+        }
+        
+        #gameBoard {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 150px 1fr 200px;
+            grid-template-rows: 120px 1fr 80px;
+            gap: 0;
+        }
+        
+        /* Initiative Track (Left) */
+        #initiativeTrack {
+            grid-column: 1;
+            grid-row: 2;
+            background: #f5f5dc;
+            border: 3px solid #654321;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .railroad-track {
+            background: white;
+            border: 2px solid #333;
+            border-radius: 5px;
+            padding: 5px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .railroad-header {
+            font-weight: bold;
+            text-align: center;
+            padding: 5px;
+            border-radius: 3px;
+            color: white;
+            margin-bottom: 5px;
+        }
+        
+        .share-spaces {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+        }
+        
+        .share-space {
+            background: #f0f0f0;
+            border: 1px solid #999;
+            border-radius: 3px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .share-space:hover {
+            background: #e0e0e0;
+            transform: scale(1.05);
+        }
+        
+        .share-space.owned {
+            font-weight: bold;
+        }
+        
+        /* Dividend Track (Top) */
+        #dividendTrack {
+            grid-column: 2;
+            grid-row: 1;
+            background: #f5f5dc;
+            border: 3px solid #654321;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+        }
+        
+        .dividend-spaces {
+            display: flex;
+            gap: 2px;
+            flex: 1;
+            height: 100%;
+        }
+        
+        .dividend-space {
+            flex: 1;
+            background: white;
+            border: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            padding: 2px;
+        }
+        
+        .dividend-values {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            width: 100%;
+            font-size: 9px;
+            text-align: center;
+        }
+        
+        .dividend-marker {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            margin-top: 2px;
+        }
+        
+        /* Map Area */
+        #mapArea {
+            grid-column: 2;
+            grid-row: 2;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #4A90E2, #2C5F8D);
         }
         
         #gameCanvas {
@@ -106,107 +225,157 @@
             cursor: grabbing;
         }
         
-        .hud {
-            position: absolute;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-        }
-        
-        #gameInfo {
-            top: 20px;
-            left: 20px;
-            min-width: 250px;
-        }
-        
-        #playerList {
-            top: 20px;
-            right: 20px;
-            min-width: 200px;
-        }
-        
-        #controls {
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+        /* Share Value Track (Bottom) */
+        #shareValueTrack {
+            grid-column: 2;
+            grid-row: 3;
+            background: #f5f5dc;
+            border: 3px solid #654321;
             display: flex;
-            gap: 10px;
-        }
-        
-        #sharePanel {
-            bottom: 20px;
-            left: 20px;
-            max-width: 300px;
-        }
-        
-        .railroad-shares {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
-            margin-top: 10px;
-        }
-        
-        .railroad-btn {
+            align-items: center;
             padding: 10px;
-            border-radius: 5px;
-            border: 2px solid transparent;
-            cursor: pointer;
-            text-align: center;
+        }
+        
+        .value-spaces {
+            display: flex;
+            gap: 2px;
+            flex: 1;
+            height: 100%;
+        }
+        
+        .value-space {
+            flex: 1;
+            background: white;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
             font-weight: bold;
+            border-radius: 3px;
+        }
+        
+        .share-marker {
+            width: 24px;
+            height: 24px;
+            border-radius: 3px;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            position: absolute;
             transition: all 0.3s;
         }
         
-        .railroad-btn:hover {
-            transform: scale(1.05);
-            border-color: white;
+        /* Control Panel (Right) */
+        #controlPanel {
+            grid-column: 3;
+            grid-row: 1 / 4;
+            background: #f5f5dc;
+            border: 3px solid #654321;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
         }
         
-        .railroad-purple { background: #8B008B; color: white; }
-        .railroad-orange { background: #FF8C00; color: white; }
-        .railroad-blue { background: #4169E1; color: white; }
-        .railroad-yellow { background: #FFD700; color: black; }
-        .railroad-red { background: #DC143C; color: white; }
+        .control-section {
+            background: white;
+            border: 2px solid #333;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        .control-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
         
         .player-item {
+            padding: 5px;
+            margin: 3px 0;
+            background: #f0f0f0;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .action-item {
+            padding: 3px;
+            margin: 2px 0;
+            font-size: 10px;
+            border-left: 3px solid #666;
+            padding-left: 5px;
+        }
+        
+        .control-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
             padding: 8px;
-            margin: 5px 0;
-            background: rgba(255,255,255,0.1);
             border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 3px 0;
+            width: 100%;
+        }
+        
+        .control-btn:hover {
+            background: #45a049;
+        }
+        
+        .railroad-purple { background: #8B008B; }
+        .railroad-orange { background: #FF8C00; }
+        .railroad-blue { background: #4169E1; }
+        .railroad-yellow { background: #FFD700; color: black; }
+        .railroad-red { background: #DC143C; }
+        
+        /* Top left corner info */
+        #gameInfo {
+            grid-column: 1;
+            grid-row: 1;
+            background: #f5f5dc;
+            border: 3px solid #654321;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        #roundDisplay {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        #priorityDisplay {
+            font-size: 12px;
+        }
+        
+        /* Treasury display (Right top) */
+        #treasuryArea {
+            grid-column: 3;
+            grid-row: 1;
+            background: #f5f5dc;
+            border: 3px solid #654321;
+            padding: 5px;
+            font-size: 11px;
+        }
+        
+        .treasury-row {
             display: flex;
             justify-content: space-between;
-        }
-        
-        .current-player {
-            background: rgba(102, 126, 234, 0.3);
-            border: 2px solid #667eea;
-        }
-        
-        .status-message {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            background: rgba(255,255,255,0.1);
-            text-align: center;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        
-        .hex {
-            transition: fill 0.3s;
-        }
-        
-        .hex:hover {
-            filter: brightness(1.2);
-        }
-        
-        .locomotive {
-            pointer-events: none;
+            padding: 2px 5px;
+            margin: 2px 0;
+            background: white;
+            border-radius: 3px;
         }
     </style>
 </head>
@@ -228,43 +397,86 @@
     </div>
     
     <div id="game">
-        <canvas id="gameCanvas"></canvas>
-        
-        <div id="gameInfo" class="hud">
-            <h3 style="margin-top: 0;">Game Info</h3>
-            <div id="roundInfo">Round: Stock 1</div>
-            <div id="priorityInfo">Priority Deal: None</div>
-            <button class="btn" id="nextRoundBtn" style="margin-top: 10px;">Next Round</button>
-        </div>
-        
-        <div id="playerList" class="hud">
-            <h3 style="margin-top: 0;">Players</h3>
-            <div id="players"></div>
-        </div>
-        
-        <div id="actionLog" class="hud" style="top: 200px; right: 20px; max-height: 300px; overflow-y: auto;">
-            <h3 style="margin-top: 0;">Action Log</h3>
-            <div id="actions"></div>
-        </div>
-        
-        <div id="sharePanel" class="hud">
-            <h3 style="margin-top: 0;">Railroad Shares</h3>
-            <div class="railroad-shares" id="railroadButtons"></div>
-            <div id="shareInfo" style="margin-top: 10px;"></div>
-            <div style="margin-top: 10px; font-size: 11px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px;">
-                <strong>Terrain Costs:</strong><br>
-                🟢 Easy: ₧4 | 🟫 Difficult: ₧8<br>
-                🏘️ City: ₧4 | 🏛️ Major City: ₧4<br>
-                <small>Cities give +1 Div, Major +2 Div & +₧2 Share Value</small><br>
-                <strong style="margin-top: 5px; display: block;">Controls:</strong>
-                <small>WASD/Arrows: Pan | +/-: Zoom | R: Reset View</small>
+        <div id="gameBoard">
+            <!-- Top Left: Round Info -->
+            <div id="gameInfo">
+                <div id="roundDisplay">Stock 1</div>
+                <div id="priorityDisplay">Priority: None</div>
+                <div id="roomDisplay" style="font-size: 10px; margin-top: 5px; color: #666;"></div>
             </div>
-        </div>
-        
-        <div id="controls" class="hud">
-            <button class="btn" id="claimPriorityBtn" style="width: auto;">Claim Priority Deal</button>
-            <button class="btn" id="payDividendsBtn" style="width: auto;">Pay Dividends</button>
-            <button class="btn" id="resetBtn" style="width: auto;">Reset Game</button>
+            
+            <!-- Left: Initiative Track -->
+            <div id="initiativeTrack">
+                <div class="railroad-track">
+                    <div class="railroad-header railroad-purple">PURPLE</div>
+                    <div class="share-spaces" id="purple-shares"></div>
+                </div>
+                <div class="railroad-track">
+                    <div class="railroad-header railroad-orange">ORANGE</div>
+                    <div class="share-spaces" id="orange-shares"></div>
+                </div>
+                <div class="railroad-track">
+                    <div class="railroad-header railroad-blue">BLUE</div>
+                    <div class="share-spaces" id="blue-shares"></div>
+                </div>
+                <div class="railroad-track">
+                    <div class="railroad-header railroad-yellow">YELLOW</div>
+                    <div class="share-spaces" id="yellow-shares"></div>
+                </div>
+                <div class="railroad-track">
+                    <div class="railroad-header railroad-red">RED</div>
+                    <div class="share-spaces" id="red-shares"></div>
+                </div>
+            </div>
+            
+            <!-- Top: Dividend Track -->
+            <div id="dividendTrack">
+                <div class="dividend-spaces" id="dividend-spaces"></div>
+            </div>
+            
+            <!-- Center: Map -->
+            <div id="mapArea">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+            
+            <!-- Bottom: Share Value Track -->
+            <div id="shareValueTrack">
+                <div class="value-spaces" id="value-spaces"></div>
+            </div>
+            
+            <!-- Right: Control Panel -->
+            <div id="controlPanel">
+                <div class="control-section" id="roomInfoSection" style="display: none;">
+                    <div class="control-title">Room Info</div>
+                    <div style="font-size: 11px; padding: 5px;">
+                        <strong>Room ID:</strong><br>
+                        <code id="gameRoomId" style="background: #f0f0f0; padding: 3px; border-radius: 3px; font-size: 10px;"></code>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <div class="control-title">Players</div>
+                    <div id="playersList"></div>
+                </div>
+                
+                <div class="control-section">
+                    <div class="control-title">Treasury</div>
+                    <div id="treasuryList"></div>
+                </div>
+                
+                <div class="control-section">
+                    <div class="control-title">Controls</div>
+                    <button class="control-btn" id="nextRoundBtn">Next Round</button>
+                    <button class="control-btn" id="payDividendsBtn">Pay Dividends</button>
+                    <button class="control-btn" id="claimPriorityBtn">Claim Priority</button>
+                    <button class="control-btn" id="resetBtn" style="background: #f44336;">Reset Game</button>
+                </div>
+                
+                <div class="control-section">
+                    <div class="control-title">Actions</div>
+                    <div id="actionLog" style="max-height: 150px; overflow-y: auto;"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -275,19 +487,17 @@
             round: 'stock',
             roundNumber: 1,
             railroads: {
-                purple: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] },
-                orange: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] },
-                blue: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] },
-                yellow: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] },
-                red: { shares: [], treasury: 0, shareValue: 20, dividends: 0, locomotives: [] }
+                purple: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
+                orange: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
+                blue: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
+                yellow: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] },
+                red: { shares: [], treasury: 0, shareValue: 0, dividends: 0, locomotives: [] }
             },
             hexMap: [],
             myPlayerId: null,
             actionLog: [],
             priorityDealHolder: null,
-            // Dividend track values from the actual board
             dividendTrack: [
-                { purple: 0, orange: 0, blue: 0, yellow: 0, red: 0 },
                 { purple: 0, orange: 0, blue: 0, yellow: 0, red: 0 },
                 { purple: 0, orange: 0, blue: 0, yellow: 0, red: 0 },
                 { purple: 0, orange: 2, blue: 2, yellow: 0, red: 0 },
@@ -319,7 +529,7 @@
         // Canvas Setup
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let camera = { x: 0, y: 0, zoom: 1 };
+        let camera = { x: 0, y: 0, zoom: 0.8 };
         let isDragging = false;
         let dragStart = { x: 0, y: 0 };
         
@@ -345,7 +555,19 @@
             
             peer.on('open', (id) => {
                 document.getElementById('connectionStatus').innerHTML = 
-                    `<strong>Room Created!</strong><br>Room ID: <code>${id}</code><br>Share this ID with other players`;
+                    `<strong style="color: green;">✓ Room Created!</strong><br>
+                    <div style="margin: 15px 0; padding: 15px; background: #f0f0f0; border-radius: 10px;">
+                        <strong>Room ID:</strong><br>
+                        <code id="roomIdDisplay" style="font-size: 1.2em; user-select: all; background: white; padding: 8px; border-radius: 5px; display: inline-block; margin: 5px 0;">${id}</code>
+                        <button onclick="copyRoomId()" style="margin-left: 10px; padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Copy</button><br>
+                        <small>Share this ID with other players</small>
+                    </div>
+                    <div id="connectedPlayers" style="margin: 10px 0;">
+                        <strong>Connected Players:</strong><br>
+                        • ${playerName} (Host)
+                    </div>
+                    <button class="btn" onclick="startGameNow()" style="background: #4CAF50; margin-top: 15px;">Start Game</button>
+                    <small style="display: block; margin-top: 10px; color: #666;">You can start with just yourself or wait for others to join</small>`;
                 
                 gameState.myPlayerId = id;
                 gameState.players.push({
@@ -356,17 +578,52 @@
                     connected: true
                 });
                 
-                setTimeout(() => {
-                    document.getElementById('lobby').style.display = 'none';
-                    document.getElementById('game').style.display = 'block';
-                    initGame();
-                }, 2000);
+                // Store room ID globally for display in game
+                window.roomId = id;
             });
             
             peer.on('connection', (conn) => {
                 connections.push(conn);
                 setupConnection(conn);
             });
+        }
+        
+        function copyRoomId() {
+            const roomIdElement = document.getElementById('roomIdDisplay');
+            if (roomIdElement) {
+                navigator.clipboard.writeText(roomIdElement.textContent).then(() => {
+                    const originalText = event.target.textContent;
+                    event.target.textContent = 'Copied!';
+                    event.target.style.background = '#45a049';
+                    setTimeout(() => {
+                        event.target.textContent = originalText;
+                        event.target.style.background = '#4CAF50';
+                    }, 2000);
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const range = document.createRange();
+                    range.selectNode(roomIdElement);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    document.execCommand('copy');
+                    window.getSelection().removeAllRanges();
+                });
+            }
+        }
+        
+        function startGameNow() {
+            // Notify all connected players to start
+            if (isHost) {
+                connections.forEach(conn => {
+                    if (conn.open) {
+                        conn.send({ type: 'startGame' });
+                    }
+                });
+            }
+            
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            initGame();
         }
         
         function joinRoom(hostId, playerName) {
@@ -385,9 +642,17 @@
                         playerName: playerName
                     });
                     
-                    document.getElementById('lobby').style.display = 'none';
-                    document.getElementById('game').style.display = 'block';
-                    initGame();
+                    document.getElementById('connectionStatus').innerHTML = 
+                        `<strong style="color: green;">✓ Connected to Room!</strong><br>
+                        <div style="margin: 15px 0;">
+                            Waiting for host to start the game...
+                        </div>`;
+                });
+                
+                conn.on('error', (err) => {
+                    document.getElementById('connectionStatus').innerHTML = 
+                        `<strong style="color: red;">✗ Connection Failed</strong><br>
+                        <small>Check the Room ID and try again</small>`;
                 });
                 
                 setupConnection(conn);
@@ -415,9 +680,30 @@
                             shares: [],
                             connected: true
                         });
-                        broadcastGameState();
-                        logAction(`${data.playerName} joined the game`);
+                        
+                        // Update connected players display if still in lobby
+                        const connectedDiv = document.getElementById('connectedPlayers');
+                        if (connectedDiv) {
+                            let playerList = '<strong>Connected Players:</strong><br>';
+                            gameState.players.forEach(p => {
+                                playerList += `• ${p.name}${p.id === gameState.myPlayerId ? ' (Host)' : ''}<br>`;
+                            });
+                            connectedDiv.innerHTML = playerList;
+                        }
+                        
+                        // If game already started, notify new player
+                        if (document.getElementById('game').style.display === 'block') {
+                            conn.send({ type: 'startGame' });
+                            broadcastGameState();
+                        }
+                        
+                        logAction(`${data.playerName} joined`);
                     }
+                    break;
+                case 'startGame':
+                    document.getElementById('lobby').style.display = 'none';
+                    document.getElementById('game').style.display = 'block';
+                    initGame();
                     break;
                 case 'gameState':
                     gameState.players = data.players;
@@ -457,13 +743,7 @@
                     break;
                 case 'payDividends':
                     if (isHost) {
-                        processPayDividends(data.railroad);
-                        broadcastGameState();
-                    }
-                    break;
-                case 'action':
-                    logAction(data.message);
-                    if (isHost) {
+                        payAllDividends();
                         broadcastGameState();
                     }
                     break;
@@ -493,7 +773,6 @@
         function logAction(message) {
             const timestamp = new Date().toLocaleTimeString();
             gameState.actionLog.push({ time: timestamp, message });
-            // Keep only last 50 actions
             if (gameState.actionLog.length > 50) {
                 gameState.actionLog.shift();
             }
@@ -503,26 +782,19 @@
         function initGame() {
             setupCanvas();
             generateHexMap();
+            setupBoardUI();
             setupEventListeners();
             updateUI();
-            
-            if (isHost) {
-                startStockRound();
-            }
         }
         
         function setupCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            
-            // Center the map initially
-            camera.x = 50;
-            camera.y = 50;
-            camera.zoom = 0.8;
+            const mapArea = document.getElementById('mapArea');
+            canvas.width = mapArea.clientWidth;
+            canvas.height = mapArea.clientHeight;
             
             window.addEventListener('resize', () => {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                canvas.width = mapArea.clientWidth;
+                canvas.height = mapArea.clientHeight;
                 render();
             });
         }
@@ -530,116 +802,94 @@
         function generateHexMap() {
             const hexSize = 30;
             
-            // Define the Iberian Peninsula map layout
-            // Format: [row, col, terrain, cityName (if city)]
             const mapData = [
                 // Portugal coast and cities
                 [2, 2, 'easy', 'Porto'],
                 [3, 2, 'easy'],
-                [4, 2, 'easy', 'Coimbra'],
-                [5, 2, 'easy'],
-                [6, 2, 'easy', 'Lisboa'],
-                [7, 2, 'easy'],
-                [8, 2, 'easy', 'Faro'],
+                [4, 2, 'easy', 'Lisboa'],
+                [6, 2, 'easy', 'Faro'],
                 
                 // Northern Spain
-                [1, 5, 'easy', 'Gijón'],
-                [1, 7, 'difficult'],
-                [1, 9, 'easy', 'Santander'],
-                [1, 11, 'easy', 'Bilbao'],
-                [1, 13, 'difficult'],
-                [1, 15, 'easy', 'Pamplona'],
+                [1, 7, 'easy', 'Bilbao'],
+                [1, 10, 'difficult'],
+                [1, 13, 'easy', 'Pamplona'],
                 
-                // Galicia
-                [2, 3, 'easy', 'A Coruña'],
-                [3, 3, 'easy', 'Santiago'],
-                [3, 4, 'difficult', 'Ourense'],
-                
-                // Central Portugal/Spain border
-                [4, 3, 'difficult'],
-                [4, 4, 'difficult'],
-                [5, 3, 'difficult'],
-                [5, 4, 'difficult', 'Salamanca'],
-                [5, 5, 'easy'],
-                
-                // Madrid region
-                [4, 6, 'difficult'],
-                [5, 6, 'difficult', 'Valladolid'],
-                [6, 6, 'difficult'],
-                [6, 7, 'easy', 'Madrid'],
-                [7, 7, 'easy'],
-                [7, 6, 'easy', 'Toledo'],
+                // Central Spain
+                [3, 5, 'difficult', 'Salamanca'],
+                [3, 7, 'difficult', 'Valladolid'],
+                [4, 7, 'easy', 'Madrid'],
+                [5, 6, 'easy', 'Toledo'],
                 
                 // Eastern Spain
-                [2, 13, 'difficult', 'Zaragoza'],
-                [3, 14, 'difficult'],
-                [3, 15, 'easy', 'Lleida'],
-                [2, 16, 'easy', 'Barcelona'],
-                [4, 15, 'easy', 'Tarragona'],
-                [5, 14, 'easy'],
-                [6, 14, 'easy', 'Valencia'],
-                [7, 13, 'easy', 'Alicante'],
+                [2, 12, 'difficult', 'Zaragoza'],
+                [2, 15, 'easy', 'Barcelona'],
+                [4, 14, 'easy', 'Valencia'],
+                [5, 13, 'easy', 'Alicante'],
                 
                 // Southern Spain
-                [8, 4, 'easy', 'Badajoz'],
-                [8, 5, 'difficult'],
-                [8, 6, 'easy', 'Ciudad Real'],
-                [9, 5, 'easy', 'Córdoba'],
-                [9, 6, 'easy'],
-                [10, 5, 'easy', 'Sevilla'],
-                [10, 6, 'easy', 'Granada'],
-                [10, 7, 'easy', 'Málaga'],
-                [10, 8, 'easy', 'Almería'],
-                [11, 5, 'easy', 'Cádiz'],
+                [6, 4, 'easy', 'Badajoz'],
+                [7, 5, 'easy', 'Córdoba'],
+                [8, 5, 'easy', 'Sevilla'],
+                [8, 7, 'easy', 'Málaga'],
+                [9, 4, 'easy', 'Cádiz'],
+                [7, 8, 'easy', 'Granada'],
+                [7, 10, 'easy', 'Murcia'],
                 
-                // Fill in remaining terrain
-                [3, 5, 'difficult'],
+                // Fill terrain
+                [2, 3, 'difficult'],
+                [2, 4, 'difficult'],
+                [2, 5, 'difficult'],
+                [2, 6, 'difficult'],
+                [2, 8, 'difficult'],
+                [2, 9, 'difficult'],
+                [2, 10, 'difficult'],
+                [2, 11, 'difficult'],
+                [3, 3, 'difficult'],
+                [3, 4, 'difficult'],
                 [3, 6, 'difficult'],
-                [3, 7, 'difficult'],
                 [3, 8, 'difficult'],
                 [3, 9, 'difficult'],
                 [3, 10, 'difficult'],
                 [3, 11, 'difficult'],
                 [3, 12, 'difficult'],
+                [3, 13, 'difficult'],
+                [3, 14, 'difficult'],
+                [4, 3, 'difficult'],
+                [4, 4, 'difficult'],
                 [4, 5, 'difficult'],
-                [4, 7, 'difficult'],
+                [4, 6, 'difficult'],
                 [4, 8, 'difficult'],
-                [4, 9, 'difficult', 'Soria'],
+                [4, 9, 'difficult'],
                 [4, 10, 'difficult'],
                 [4, 11, 'difficult'],
                 [4, 12, 'difficult'],
                 [4, 13, 'difficult'],
-                [4, 14, 'difficult'],
-                [5, 7, 'difficult'],
-                [5, 8, 'difficult', 'Guadalajara'],
-                [5, 9, 'difficult'],
-                [5, 10, 'difficult', 'Cuenca'],
-                [5, 11, 'difficult'],
-                [5, 12, 'difficult', 'Teruel'],
-                [5, 13, 'difficult'],
+                [5, 3, 'easy'],
+                [5, 4, 'easy'],
+                [5, 5, 'easy'],
+                [5, 7, 'easy'],
+                [5, 8, 'easy'],
+                [5, 9, 'easy'],
+                [5, 10, 'easy'],
+                [5, 11, 'easy'],
+                [5, 12, 'easy'],
+                [6, 3, 'easy'],
+                [6, 5, 'easy'],
+                [6, 6, 'easy'],
+                [6, 7, 'easy'],
                 [6, 8, 'easy'],
                 [6, 9, 'easy'],
                 [6, 10, 'easy'],
-                [6, 11, 'easy'],
-                [6, 12, 'easy', 'Castellón'],
-                [6, 13, 'easy'],
-                [7, 8, 'easy'],
-                [7, 9, 'easy', 'Albacete'],
-                [7, 10, 'easy'],
-                [7, 11, 'easy'],
-                [7, 12, 'easy'],
-                [8, 7, 'easy'],
-                [8, 8, 'easy'],
-                [8, 9, 'easy', 'Murcia'],
-                [8, 10, 'easy'],
-                [9, 7, 'easy', 'Jaén'],
-                [9, 8, 'easy'],
-                [9, 9, 'easy']
+                [7, 3, 'easy'],
+                [7, 4, 'easy'],
+                [7, 6, 'easy'],
+                [7, 7, 'easy'],
+                [7, 9, 'easy'],
+                [8, 6, 'easy']
             ];
             
-            // Major cities (with urban bonus)
             const majorCities = ['Madrid', 'Barcelona', 'Valencia', 'Sevilla', 'Lisboa', 
-                                 'Porto', 'Bilbao', 'Zaragoza', 'Málaga', 'Cádiz'];
+                                 'Porto', 'Bilbao', 'Zaragoza', 'Málaga'];
             
             gameState.hexMap = [];
             
@@ -656,6 +906,49 @@
                     cityName: cityName || null,
                     locomotives: []
                 });
+            });
+        }
+        
+        function setupBoardUI() {
+            // Setup dividend track spaces
+            const dividendSpaces = document.getElementById('dividend-spaces');
+            for (let i = 0; i < 21; i++) {
+                const space = document.createElement('div');
+                space.className = 'dividend-space';
+                space.id = `dividend-${i}`;
+                space.innerHTML = `<div class="dividend-values">
+                    <div style="color:#8B008B">${gameState.dividendTrack[i].purple}</div>
+                    <div style="color:#FF8C00">${gameState.dividendTrack[i].orange}</div>
+                    <div style="color:#4169E1">${gameState.dividendTrack[i].blue}</div>
+                    <div style="color:#FFD700; background: #333;">${gameState.dividendTrack[i].yellow}</div>
+                    <div style="color:#DC143C">${gameState.dividendTrack[i].red}</div>
+                </div>`;
+                dividendSpaces.appendChild(space);
+            }
+            
+            // Setup share value track
+            const valueSpaces = document.getElementById('value-spaces');
+            const values = [0, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50];
+            values.forEach(val => {
+                const space = document.createElement('div');
+                space.className = 'value-space';
+                space.id = `value-${val}`;
+                space.textContent = val === 0 ? '-' : `₧${val}`;
+                valueSpaces.appendChild(space);
+            });
+            
+            // Setup share spaces for each railroad
+            const colors = ['purple', 'orange', 'blue', 'yellow', 'red'];
+            colors.forEach(color => {
+                const container = document.getElementById(`${color}-shares`);
+                for (let i = 0; i < 5; i++) {
+                    const space = document.createElement('div');
+                    space.className = 'share-space';
+                    space.id = `${color}-share-${i}`;
+                    space.onclick = () => buyShare(color, i);
+                    space.textContent = 'Available';
+                    container.appendChild(space);
+                }
             });
         }
         
@@ -679,7 +972,6 @@
                 isDragging = false;
             });
             
-            // Mouse wheel zoom
             canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const zoomSpeed = 0.1;
@@ -690,7 +982,6 @@
                     camera.zoom = Math.max(0.5, camera.zoom - zoomSpeed);
                 }
                 
-                // Zoom towards mouse position
                 const zoomRatio = camera.zoom / oldZoom;
                 camera.x = e.clientX - (e.clientX - camera.x) * zoomRatio;
                 camera.y = e.clientY - (e.clientY - camera.y) * zoomRatio;
@@ -698,80 +989,31 @@
                 render();
             });
             
-            // Keyboard controls
-            document.addEventListener('keydown', (e) => {
-                const moveSpeed = 30;
-                switch(e.key) {
-                    case 'ArrowUp':
-                    case 'w':
-                        camera.y += moveSpeed;
-                        render();
-                        break;
-                    case 'ArrowDown':
-                    case 's':
-                        camera.y -= moveSpeed;
-                        render();
-                        break;
-                    case 'ArrowLeft':
-                    case 'a':
-                        camera.x += moveSpeed;
-                        render();
-                        break;
-                    case 'ArrowRight':
-                    case 'd':
-                        camera.x -= moveSpeed;
-                        render();
-                        break;
-                    case '+':
-                    case '=':
-                        camera.zoom = Math.min(2, camera.zoom + 0.1);
-                        render();
-                        break;
-                    case '-':
-                    case '_':
-                        camera.zoom = Math.max(0.5, camera.zoom - 0.1);
-                        render();
-                        break;
-                    case 'r':
-                        // Reset view
-                        camera.x = 50;
-                        camera.y = 50;
-                        camera.zoom = 0.8;
-                        render();
-                        break;
-                }
-            });
-            
             // Click on hex
             canvas.addEventListener('click', (e) => {
-                if (gameState.round === 'build') {
-                    const hex = getHexAtPoint(e.clientX, e.clientY);
-                    if (hex) {
-                        handleHexClick(hex);
-                    }
+                const rect = canvas.getBoundingClientRect();
+                const hex = getHexAtPoint(e.clientX - rect.left, e.clientY - rect.top);
+                if (hex) {
+                    showHexMenu(hex, e.clientX, e.clientY);
                 }
-            });
-            
-            // Railroad buttons
-            const colors = ['purple', 'orange', 'blue', 'yellow', 'red'];
-            const buttonsContainer = document.getElementById('railroadButtons');
-            
-            colors.forEach(color => {
-                const btn = document.createElement('div');
-                btn.className = `railroad-btn railroad-${color}`;
-                btn.textContent = color[0].toUpperCase();
-                btn.onclick = () => buyShare(color);
-                buttonsContainer.appendChild(btn);
             });
             
             // Control buttons
-            document.getElementById('passBtn').onclick = pass;
-            document.getElementById('buildBtn').onclick = () => {
-                if (gameState.round === 'stock') {
-                    gameState.round = 'build';
-                    updateUI();
+            document.getElementById('claimPriorityBtn').onclick = claimPriority;
+            document.getElementById('payDividendsBtn').onclick = () => {
+                if (isHost) {
+                    payAllDividends();
+                    broadcastGameState();
+                } else {
+                    connections[0].send({ type: 'payDividends' });
                 }
             };
+            document.getElementById('resetBtn').onclick = () => {
+                if (confirm('Reset the entire game?')) {
+                    location.reload();
+                }
+            };
+            document.getElementById('nextRoundBtn').onclick = nextRound;
         }
         
         function getHexAtPoint(x, y) {
@@ -791,21 +1033,115 @@
             return null;
         }
         
-        function buyShare(railroad) {
-            const myPlayer = gameState.players.find(p => p.id === gameState.myPlayerId);
+        function showHexMenu(hex, x, y) {
+            const existingMenu = document.getElementById('hexMenu');
+            if (existingMenu) existingMenu.remove();
             
-            // Check if this is the first share
+            const menu = document.createElement('div');
+            menu.id = 'hexMenu';
+            menu.style.position = 'absolute';
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+            menu.style.background = 'white';
+            menu.style.border = '2px solid #333';
+            menu.style.borderRadius = '5px';
+            menu.style.padding = '10px';
+            menu.style.zIndex = '1000';
+            
+            menu.innerHTML = '<strong>Build track for:</strong><br>';
+            
+            const colors = ['purple', 'orange', 'blue', 'yellow', 'red'];
+            let hasOptions = false;
+            
+            colors.forEach(color => {
+                if (gameState.railroads[color].shares.length > 0) {
+                    hasOptions = true;
+                    const btn = document.createElement('button');
+                    btn.className = `railroad-btn railroad-${color}`;
+                    btn.style.width = '100%';
+                    btn.style.margin = '2px 0';
+                    btn.style.padding = '5px';
+                    btn.style.border = 'none';
+                    btn.style.borderRadius = '3px';
+                    btn.style.color = 'white';
+                    btn.style.cursor = 'pointer';
+                    
+                    const cost = hex.terrain === 'difficult' ? 8 : 4;
+                    const treasury = gameState.railroads[color].treasury;
+                    btn.innerHTML = `${color} (₧${treasury})`;
+                    
+                    if (treasury < cost) {
+                        btn.style.opacity = '0.5';
+                        btn.disabled = true;
+                    }
+                    
+                    btn.onclick = () => {
+                        buildTrack(color, hex);
+                        menu.remove();
+                    };
+                    menu.appendChild(btn);
+                }
+            });
+            
+            if (!hasOptions) {
+                menu.innerHTML += '<small>No railroads started</small><br>';
+            }
+            
+            const info = document.createElement('div');
+            info.style.marginTop = '10px';
+            info.style.fontSize = '11px';
+            info.innerHTML = `<strong>Hex Info:</strong><br>`;
+            if (hex.cityName) {
+                info.innerHTML += `${hex.cityName}<br>`;
+            }
+            info.innerHTML += `Cost: ₧${hex.terrain === 'difficult' ? 8 : 4}<br>`;
+            if (hex.isMajorCity) {
+                info.innerHTML += `Major City (+2 Div, +₧2 Value)<br>`;
+            } else if (hex.isCity) {
+                info.innerHTML += `City (+1 Div)<br>`;
+            }
+            menu.appendChild(info);
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = 'Cancel';
+            closeBtn.style.marginTop = '10px';
+            closeBtn.style.width = '100%';
+            closeBtn.onclick = () => menu.remove();
+            menu.appendChild(closeBtn);
+            
+            document.body.appendChild(menu);
+            
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!menu.contains(e.target)) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 100);
+        }
+        
+        function buyShare(railroad, shareIndex) {
+            const share = gameState.railroads[railroad].shares[shareIndex];
+            if (share) return; // Already owned
+            
+            const myPlayer = gameState.players.find(p => p.id === gameState.myPlayerId);
+            if (!myPlayer) return;
+            
             const isFirstShare = gameState.railroads[railroad].shares.length === 0;
             let shareValue = gameState.railroads[railroad].shareValue;
             
             if (isFirstShare) {
-                // For first share, player can choose value between 12-36
                 const value = prompt(`Starting ${railroad} railroad. Choose share value (₧12-₧36):`, '20');
+                if (!value) return;
                 shareValue = Math.max(12, Math.min(36, parseInt(value) || 20));
-                gameState.railroads[railroad].shareValue = shareValue;
+                shareValue = Math.round(shareValue / 2) * 2;
+            } else if (!shareValue || shareValue === 0) {
+                alert('Railroad not started');
+                return;
             }
             
-            if (myPlayer && myPlayer.money >= shareValue) {
+            if (myPlayer.money >= shareValue) {
                 const message = {
                     type: 'buyShare',
                     playerId: gameState.myPlayerId,
@@ -820,13 +1156,13 @@
                     connections[0].send(message);
                 }
             } else {
-                alert(`Insufficient funds. Need ₧${shareValue}, have ₧${myPlayer ? myPlayer.money : 0}`);
+                alert(`Insufficient funds. Need ₧${shareValue}, have ₧${myPlayer.money}`);
             }
         }
         
         function processBuyShare(playerId, railroad, shareValue) {
             const player = gameState.players.find(p => p.id === playerId);
-            if (player && player.money >= shareValue) {
+            if (player && player.money >= shareValue && gameState.railroads[railroad].shares.length < 5) {
                 player.money -= shareValue;
                 player.shares.push({ railroad, value: shareValue });
                 
@@ -834,16 +1170,17 @@
                 gameState.railroads[railroad].treasury += shareValue;
                 gameState.railroads[railroad].shareValue = shareValue;
                 
-                const isFirstShare = gameState.railroads[railroad].shares.length === 1;
-                if (isFirstShare) {
-                    logAction(`${player.name} started ${railroad} railroad at ₧${shareValue} per share`);
-                } else {
-                    logAction(`${player.name} bought ${railroad} share for ₧${shareValue}`);
-                }
+                const isFirst = gameState.railroads[railroad].shares.length === 1;
+                logAction(`${player.name} ${isFirst ? 'started' : 'bought'} ${railroad} at ₧${shareValue}`);
             }
         }
         
         function buildTrack(railroad, hex) {
+            if (gameState.railroads[railroad].shares.length === 0) {
+                alert(`${railroad} railroad not started`);
+                return;
+            }
+            
             const cost = hex.terrain === 'difficult' ? 8 : 4;
             
             if (gameState.railroads[railroad].treasury >= cost) {
@@ -860,62 +1197,49 @@
                 } else {
                     connections[0].send(message);
                 }
+            } else {
+                alert(`${railroad} needs ₧${cost}, has ₧${gameState.railroads[railroad].treasury}`);
             }
         }
         
         function processBuildTrack(playerId, railroad, hexData) {
             const hex = gameState.hexMap.find(h => h.row === hexData.row && h.col === hexData.col);
+            if (!hex) return;
+            
             const cost = hex.terrain === 'difficult' ? 8 : 4;
             const player = gameState.players.find(p => p.id === playerId);
             
-            if (hex && gameState.railroads[railroad].treasury >= cost) {
-                // Check if railroad already has track here
-                if (hex.locomotives.includes(railroad)) {
-                    logAction(`${railroad} already has track at ${hex.cityName || 'this hex'}`);
-                    return;
-                }
-                
+            const isFirst = gameState.railroads[railroad].locomotives.length === 0;
+            if (isFirst && !hex.isMajorCity) {
+                logAction(`${railroad} must start in a Major City!`);
+                return;
+            }
+            
+            if (hex.locomotives.includes(railroad)) {
+                logAction(`${railroad} already has track here`);
+                return;
+            }
+            
+            if (hex.locomotives.length > 0 && !hex.isCity && !hex.isMajorCity) {
+                logAction(`Only one railroad on non-city hexes`);
+                return;
+            }
+            
+            if (gameState.railroads[railroad].treasury >= cost) {
                 gameState.railroads[railroad].treasury -= cost;
                 hex.locomotives.push(railroad);
                 gameState.railroads[railroad].locomotives.push({ row: hex.row, col: hex.col });
                 
-                // Update dividends and share value if city
                 if (hex.isMajorCity) {
                     gameState.railroads[railroad].dividends += 2;
-                    // Major cities increase share value
                     gameState.railroads[railroad].shareValue = Math.min(gameState.railroads[railroad].shareValue + 2, 50);
-                    logAction(`${player.name} built ${railroad} track at ${hex.cityName} (Major City) - Cost: ₧${cost}, +2 Div Level, +₧2 Share Value`);
+                    logAction(`${player.name}: ${railroad} at ${hex.cityName} -₧${cost} +2Div +₧2Value`);
                 } else if (hex.isCity) {
                     gameState.railroads[railroad].dividends += 1;
-                    logAction(`${player.name} built ${railroad} track at ${hex.cityName} (City) - Cost: ₧${cost}, +1 Div Level`);
+                    logAction(`${player.name}: ${railroad} at ${hex.cityName} -₧${cost} +1Div`);
                 } else {
-                    const terrain = hex.terrain === 'difficult' ? 'difficult terrain' : 'easy terrain';
-                    logAction(`${player.name} built ${railroad} track on ${terrain} - Cost: ₧${cost}`);
+                    logAction(`${player.name}: ${railroad} on ${hex.terrain} -₧${cost}`);
                 }
-                
-                // Check for 5 major cities connection bonus
-                const majorCitiesConnected = gameState.railroads[railroad].locomotives.filter(loco => {
-                    const h = gameState.hexMap.find(hex => hex.row === loco.row && hex.col === loco.col);
-                    return h && h.isMajorCity;
-                }).length;
-                
-                if (majorCitiesConnected === 5) {
-                    // Special dividend for connecting 5 major cities
-                    const bonusAmounts = { purple: 12, orange: 14, blue: 14, yellow: 12, red: 10 };
-                    const bonus = bonusAmounts[railroad];
-                    
-                    gameState.railroads[railroad].shares.forEach(playerId => {
-                        const p = gameState.players.find(player => player.id === playerId);
-                        if (p) p.money += bonus;
-                    });
-                    
-                    const unpurchasedBonus = bonus * (5 - gameState.railroads[railroad].shares.length);
-                    gameState.railroads[railroad].treasury += unpurchasedBonus;
-                    
-                    logAction(`${railroad} connected 5 Major Cities! Special dividend: ₧${bonus}/share`);
-                }
-            } else {
-                logAction(`${railroad} cannot afford to build (needs ₧${cost}, has ₧${gameState.railroads[railroad].treasury})`);
             }
         }
         
@@ -936,13 +1260,11 @@
         function processClaimPriority(playerId) {
             const player = gameState.players.find(p => p.id === playerId);
             gameState.priorityDealHolder = playerId;
-            logAction(`${player.name} claimed the Priority Deal token`);
+            logAction(`${player.name} claimed Priority Deal`);
         }
         
         function nextRound() {
-            const message = {
-                type: 'nextRound'
-            };
+            const message = { type: 'nextRound' };
             
             if (isHost) {
                 processNextRound();
@@ -953,112 +1275,80 @@
         }
         
         function processNextRound() {
-            // Round progression follows the pattern on the board
-            const roundSequence = [
+            const sequence = [
                 'Stock 1', 'Build 1', 'Stock 2', 'Build 2', 'Stock 3', 'Build 3',
                 'Stock 4', 'Build 4', 'Stock 5', 'Build 5', 'Final Build'
             ];
             
-            let currentIndex = -1;
-            const currentRoundName = `${gameState.round === 'stock' ? 'Stock' : 'Build'} ${gameState.roundNumber}`;
+            const current = gameState.round === 'build' && gameState.roundNumber === 6 
+                ? 'Final Build' 
+                : `${gameState.round === 'stock' ? 'Stock' : 'Build'} ${gameState.roundNumber}`;
             
-            for (let i = 0; i < roundSequence.length; i++) {
-                if (roundSequence[i].includes(currentRoundName)) {
-                    currentIndex = i;
-                    break;
-                }
-            }
+            const currentIndex = sequence.indexOf(current);
             
-            if (currentIndex >= 0 && currentIndex < roundSequence.length - 1) {
-                const nextRound = roundSequence[currentIndex + 1];
+            if (currentIndex < sequence.length - 1) {
+                const next = sequence[currentIndex + 1];
                 
-                if (nextRound.includes('Stock')) {
-                    gameState.round = 'stock';
-                    gameState.roundNumber = parseInt(nextRound.split(' ')[1]);
-                } else if (nextRound === 'Final Build') {
+                if (next === 'Final Build') {
                     gameState.round = 'build';
-                    gameState.roundNumber = 6; // Final build
+                    gameState.roundNumber = 6;
                 } else {
-                    gameState.round = 'build';
-                    gameState.roundNumber = parseInt(nextRound.split(' ')[1]);
+                    const [type, num] = next.split(' ');
+                    gameState.round = type.toLowerCase();
+                    gameState.roundNumber = parseInt(num);
                 }
                 
-                logAction(`Advanced to ${nextRound}`);
+                logAction(`Advanced to ${next}`);
             } else {
-                logAction('Game has ended!');
                 calculateFinalScores();
             }
         }
         
-        function calculateFinalScores() {
-            let scoreText = 'FINAL SCORES:\n';
-            gameState.players.forEach(player => {
-                let totalValue = player.money;
-                
-                player.shares.forEach(share => {
-                    totalValue += gameState.railroads[share.railroad].shareValue;
-                });
-                
-                scoreText += `${player.name}: ₧${totalValue}\n`;
-            });
-            
-            logAction(scoreText);
-            alert(scoreText);
-        }
-        
         function payAllDividends() {
-            const colors = ['purple', 'orange', 'blue', 'yellow', 'red'];
-            colors.forEach(railroad => {
+            ['purple', 'orange', 'blue', 'yellow', 'red'].forEach(railroad => {
                 if (gameState.railroads[railroad].shares.length > 0) {
-                    processPayDividends(railroad);
+                    const dividendLevel = Math.min(gameState.railroads[railroad].dividends, 20);
+                    const rate = gameState.dividendTrack[dividendLevel][railroad];
+                    
+                    gameState.railroads[railroad].shares.forEach(playerId => {
+                        const player = gameState.players.find(p => p.id === playerId);
+                        if (player) player.money += rate;
+                    });
+                    
+                    const unpurchased = 5 - gameState.railroads[railroad].shares.length;
+                    gameState.railroads[railroad].treasury += rate * unpurchased;
+                    
+                    if (rate > 0) {
+                        logAction(`${railroad}: ₧${rate}/share (Lvl ${dividendLevel})`);
+                    }
                 }
             });
-            
-            if (isHost) {
-                broadcastGameState();
-            } else {
-                connections[0].send({ type: 'payDividends' });
-            }
         }
         
-        function processPayDividends(railroad) {
-            const dividendLevel = Math.min(gameState.railroads[railroad].dividends, gameState.dividendTrack.length - 1);
-            const dividendRate = gameState.dividendTrack[dividendLevel][railroad];
-            
-            let totalPaid = 0;
-            gameState.railroads[railroad].shares.forEach(playerId => {
-                const player = gameState.players.find(p => p.id === playerId);
-                if (player) {
-                    player.money += dividendRate;
-                    totalPaid += dividendRate;
-                }
+        function calculateFinalScores() {
+            let scores = [];
+            gameState.players.forEach(player => {
+                let total = player.money;
+                player.shares.forEach(share => {
+                    total += gameState.railroads[share.railroad].shareValue;
+                });
+                scores.push({ name: player.name, total });
             });
             
-            // Pay treasury for unpurchased shares
-            const unpurchasedShares = 5 - gameState.railroads[railroad].shares.length;
-            const treasuryDividend = dividendRate * unpurchasedShares;
-            gameState.railroads[railroad].treasury += treasuryDividend;
+            scores.sort((a, b) => b.total - a.total);
             
-            if (dividendRate > 0) {
-                logAction(`${railroad} paid ₧${dividendRate} per share (Level ${dividendLevel}). Treasury: +₧${treasuryDividend}`);
-            }
-        }
-        
-        function resetGame() {
-            if (confirm('Reset the entire game?')) {
-                location.reload();
-            }
+            let result = '🏁 GAME OVER 🏁\n\n';
+            scores.forEach((s, i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+                result += `${medal} ${s.name}: ₧${s.total}\n`;
+            });
+            
+            logAction(result);
+            alert(result);
         }
         
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw background gradient to simulate ocean
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, '#4A90E2');
-            gradient.addColorStop(1, '#2C5F8D');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             ctx.save();
             ctx.translate(camera.x, camera.y);
@@ -1070,12 +1360,6 @@
             gameState.hexMap.forEach(hex => {
                 ctx.save();
                 ctx.translate(hex.x + hexSize, hex.y + hexSize);
-                
-                // Draw hex shadow
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-                ctx.shadowBlur = 5;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 2;
                 
                 // Draw hex
                 ctx.beginPath();
@@ -1090,50 +1374,18 @@
                 
                 // Fill based on terrain
                 if (hex.isMajorCity) {
-                    // Major cities - gold with gradient
-                    const cityGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, hexSize);
-                    cityGrad.addColorStop(0, '#FFE066');
-                    cityGrad.addColorStop(1, '#F4B942');
-                    ctx.fillStyle = cityGrad;
+                    ctx.fillStyle = '#FFE066';
                 } else if (hex.isCity) {
-                    // Regular cities - light blue
                     ctx.fillStyle = '#A8DADC';
                 } else if (hex.terrain === 'difficult') {
-                    // Mountains - brown gradient
-                    const mountGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, hexSize);
-                    mountGrad.addColorStop(0, '#8D6E63');
-                    mountGrad.addColorStop(1, '#6D4C41');
-                    ctx.fillStyle = mountGrad;
+                    ctx.fillStyle = '#8D6E63';
                 } else {
-                    // Easy terrain - green gradient
-                    const greenGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, hexSize);
-                    greenGrad.addColorStop(0, '#81C784');
-                    greenGrad.addColorStop(1, '#66BB6A');
-                    ctx.fillStyle = greenGrad;
+                    ctx.fillStyle = '#81C784';
                 }
                 ctx.fill();
-                
-                // Draw border
                 ctx.strokeStyle = '#2C3E50';
                 ctx.lineWidth = 1.5;
                 ctx.stroke();
-                
-                ctx.shadowColor = 'transparent';
-                
-                // Draw city icon for major cities
-                if (hex.isMajorCity) {
-                    ctx.fillStyle = '#2C3E50';
-                    ctx.font = 'bold 16px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('🏛️', 0, -5);
-                } else if (hex.isCity) {
-                    ctx.fillStyle = '#2C3E50';
-                    ctx.font = '14px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('🏘️', 0, -5);
-                }
                 
                 // Draw city name
                 if (hex.cityName) {
@@ -1141,10 +1393,7 @@
                     ctx.font = 'bold 9px Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.strokeStyle = 'white';
-                    ctx.lineWidth = 3;
-                    ctx.strokeText(hex.cityName, 0, 10);
-                    ctx.fillText(hex.cityName, 0, 10);
+                    ctx.fillText(hex.cityName, 0, 0);
                 }
                 
                 // Draw locomotives
@@ -1160,142 +1409,135 @@
                         
                         const locX = (idx - (hex.locomotives.length - 1) / 2) * 12;
                         
-                        // Draw locomotive token
                         ctx.beginPath();
-                        ctx.arc(locX, -8, 6, 0, Math.PI * 2);
+                        ctx.arc(locX, -10, 6, 0, Math.PI * 2);
                         ctx.fillStyle = colors[railroad];
                         ctx.fill();
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 2;
                         ctx.stroke();
-                        
-                        // Draw small train icon
-                        ctx.fillStyle = 'white';
-                        ctx.font = 'bold 8px Arial';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText('🚂', locX, -8);
                     });
-                }
-                
-                // Draw terrain cost indicator
-                if (!hex.isCity) {
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                    ctx.font = '8px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(`₧${hex.terrain === 'difficult' ? '8' : '4'}`, 0, 22);
                 }
                 
                 ctx.restore();
             });
             
-            // Draw connections between hexes with locomotives
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.lineWidth = 3;
-            ctx.setLineDash([5, 5]);
-            
-            const railroadColors = ['purple', 'orange', 'blue', 'yellow', 'red'];
-            railroadColors.forEach(railroad => {
-                const locos = gameState.railroads[railroad].locomotives;
-                if (locos.length > 1) {
-                    ctx.beginPath();
-                    locos.forEach((loco, idx) => {
-                        const hex = gameState.hexMap.find(h => h.row === loco.row && h.col === loco.col);
-                        if (hex) {
-                            if (idx === 0) {
-                                ctx.moveTo(hex.x + hexSize, hex.y + hexSize);
-                            } else {
-                                ctx.lineTo(hex.x + hexSize, hex.y + hexSize);
-                            }
-                        }
-                    });
-                    ctx.strokeStyle = getColorHex(railroad);
-                    ctx.stroke();
-                }
-            });
-            
-            ctx.setLineDash([]);
             ctx.restore();
         }
         
         function updateUI() {
-            // Update round info with proper formatting
-            let roundDisplay = gameState.round === 'stock' ? 'Stock' : 'Build';
-            if (gameState.round === 'build' && gameState.roundNumber === 6) {
-                roundDisplay = 'Final Build';
-            } else {
-                roundDisplay += ` ${gameState.roundNumber}`;
-            }
-            document.getElementById('roundInfo').textContent = `Round: ${roundDisplay}`;
+            // Update round display
+            let roundText = gameState.round === 'build' && gameState.roundNumber === 6 
+                ? 'Final Build' 
+                : `${gameState.round === 'stock' ? 'Stock' : 'Build'} ${gameState.roundNumber}`;
+            document.getElementById('roundDisplay').textContent = roundText;
             
-            // Update priority deal holder
-            if (gameState.priorityDealHolder) {
-                const holder = gameState.players.find(p => p.id === gameState.priorityDealHolder);
-                document.getElementById('priorityInfo').textContent = 
-                    `Priority Deal: ${holder ? holder.name : 'None'}`;
-            } else {
-                document.getElementById('priorityInfo').textContent = 'Priority Deal: None';
-            }
+            // Update priority
+            const holder = gameState.priorityDealHolder 
+                ? gameState.players.find(p => p.id === gameState.priorityDealHolder) 
+                : null;
+            document.getElementById('priorityDisplay').textContent = 
+                `Priority: ${holder ? holder.name : 'None'}`;
             
-            // Update player list with money and shares
-            const playersList = document.getElementById('players');
+            // Update room ID display
+            if (window.roomId && isHost) {
+                document.getElementById('roomDisplay').innerHTML = `Room: ${window.roomId}`;
+                document.getElementById('roomInfoSection').style.display = 'block';
+                document.getElementById('gameRoomId').textContent = window.roomId;
+            }
+            // Update players
+            const playersList = document.getElementById('playersList');
             playersList.innerHTML = '';
-            gameState.players.forEach((player) => {
+            gameState.players.forEach(player => {
                 const div = document.createElement('div');
                 div.className = 'player-item';
-                if (player.id === gameState.priorityDealHolder) {
-                    div.classList.add('current-player');
-                }
-                
-                const sharesSummary = {};
-                player.shares.forEach(share => {
-                    sharesSummary[share.railroad] = (sharesSummary[share.railroad] || 0) + 1;
+                const shares = {};
+                player.shares.forEach(s => {
+                    shares[s.railroad] = (shares[s.railroad] || 0) + 1;
                 });
-                
-                const sharesText = Object.entries(sharesSummary)
-                    .map(([railroad, count]) => `${railroad[0].toUpperCase()}:${count}`)
+                const shareText = Object.entries(shares)
+                    .map(([r, n]) => `${r[0].toUpperCase()}:${n}`)
                     .join(' ');
-                
-                div.innerHTML = `
-                    <div>${player.name}</div>
-                    <div>₧${player.money} ${sharesText ? `[${sharesText}]` : ''}</div>
-                `;
+                div.innerHTML = `<strong>${player.name}</strong><br>₧${player.money} ${shareText}`;
                 playersList.appendChild(div);
             });
             
-            // Update action log
-            const actionsDiv = document.getElementById('actions');
-            actionsDiv.innerHTML = '';
-            gameState.actionLog.slice(-10).reverse().forEach(action => {
+            // Update treasury
+            const treasuryList = document.getElementById('treasuryList');
+            treasuryList.innerHTML = '';
+            ['purple', 'orange', 'blue', 'yellow', 'red'].forEach(color => {
                 const div = document.createElement('div');
-                div.style.padding = '5px';
-                div.style.borderBottom = '1px solid rgba(255,255,255,0.2)';
-                div.innerHTML = `<small>${action.time}</small><br>${action.message}`;
-                actionsDiv.appendChild(div);
+                div.className = 'treasury-row';
+                const railroad = gameState.railroads[color];
+                div.innerHTML = `<span style="color:${getColorHex(color)}">${color.toUpperCase()}</span>
+                                <span>₧${railroad.treasury}</span>`;
+                treasuryList.appendChild(div);
             });
             
-            // Update share info with treasury and dividend info
-            const shareInfo = document.getElementById('shareInfo');
-            let shareText = '<strong>Railroads:</strong><br>';
-            for (const [color, railroad] of Object.entries(gameState.railroads)) {
-                const dividendLevel = Math.min(railroad.dividends, gameState.dividendTrack.length - 1);
-                const currentDividend = gameState.dividendTrack[dividendLevel][color];
-                
-                shareText += `<div style="margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 5px;">
-                    <strong style="color: ${getColorHex(color)}">${color.toUpperCase()}</strong><br>
-                    Share: ₧${railroad.shareValue} | Treasury: ₧${railroad.treasury}<br>
-                    Shares: ${railroad.shares.length}/5 | Div Lvl: ${railroad.dividends} (₧${currentDividend}/share)
-                </div>`;
-            }
-            shareInfo.innerHTML = shareText;
-            
-            // Update railroad buttons to show current values
-            const colors = ['purple', 'orange', 'blue', 'yellow', 'red'];
-            colors.forEach(color => {
-                const btn = document.querySelector(`.railroad-${color}`);
-                if (btn) {
-                    btn.innerHTML = `${color[0].toUpperCase()}<br><small>₧${gameState.railroads[color].shareValue || 20}</small>`;
+            // Update share spaces
+            ['purple', 'orange', 'blue', 'yellow', 'red'].forEach(color => {
+                const railroad = gameState.railroads[color];
+                for (let i = 0; i < 5; i++) {
+                    const space = document.getElementById(`${color}-share-${i}`);
+                    if (i < railroad.shares.length) {
+                        const owner = gameState.players.find(p => p.id === railroad.shares[i]);
+                        space.textContent = owner ? owner.name : 'Owned';
+                        space.className = 'share-space owned';
+                        space.style.background = getColorHex(color);
+                        space.style.color = 'white';
+                    } else {
+                        space.textContent = railroad.shareValue > 0 ? `₧${railroad.shareValue}` : 'New';
+                        space.className = 'share-space';
+                        space.style.background = '#f0f0f0';
+                        space.style.color = '#333';
+                    }
                 }
+            });
+            
+            // Update dividend markers
+            ['purple', 'orange', 'blue', 'yellow', 'red'].forEach(color => {
+                const level = Math.min(gameState.railroads[color].dividends, 20);
+                const oldMarker = document.getElementById(`${color}-dividend-marker`);
+                if (oldMarker) oldMarker.remove();
+                
+                if (gameState.railroads[color].shares.length > 0) {
+                    const marker = document.createElement('div');
+                    marker.id = `${color}-dividend-marker`;
+                    marker.className = 'dividend-marker';
+                    marker.style.background = getColorHex(color);
+                    document.getElementById(`dividend-${level}`).appendChild(marker);
+                }
+            });
+            
+            // Update share value markers
+            ['purple', 'orange', 'blue', 'yellow', 'red'].forEach(color => {
+                const oldMarker = document.getElementById(`${color}-value-marker`);
+                if (oldMarker) oldMarker.remove();
+                
+                const value = gameState.railroads[color].shareValue;
+                if (value > 0) {
+                    const marker = document.createElement('div');
+                    marker.id = `${color}-value-marker`;
+                    marker.className = 'share-marker';
+                    marker.style.background = getColorHex(color);
+                    marker.textContent = color[0].toUpperCase();
+                    const space = document.getElementById(`value-${value}`);
+                    if (space) {
+                        marker.style.position = 'relative';
+                        marker.style.marginTop = '2px';
+                        space.appendChild(marker);
+                    }
+                }
+            });
+            
+            // Update action log
+            const actionLog = document.getElementById('actionLog');
+            actionLog.innerHTML = '';
+            gameState.actionLog.slice(-10).reverse().forEach(action => {
+                const div = document.createElement('div');
+                div.className = 'action-item';
+                div.innerHTML = `${action.time}: ${action.message}`;
+                actionLog.appendChild(div);
             });
             
             render();
