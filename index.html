@@ -95,7 +95,7 @@
             height: 100%;
             display: grid;
             grid-template-columns: 150px 1fr 200px;
-            grid-template-rows: 120px 1fr 80px;
+            grid-template-rows: 120px 1fr 80px 100px;
             gap: 0;
         }
         
@@ -359,23 +359,127 @@
             font-size: 12px;
         }
         
-        /* Treasury display (Right top) */
-        #treasuryArea {
-            grid-column: 3;
-            grid-row: 1;
-            background: #f5f5dc;
-            border: 3px solid #654321;
-            padding: 5px;
-            font-size: 11px;
+        /* Components Area (Bottom) */
+        #componentsArea {
+            grid-column: 1 / 4;
+            grid-row: 4;
+            background: linear-gradient(135deg, #5D4E37 0%, #3E2723 100%);
+            border: 3px solid #2E1A1A;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            gap: 30px;
+            position: relative;
+            overflow: visible;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
         }
         
-        .treasury-row {
+        .money-stack {
             display: flex;
-            justify-content: space-between;
-            padding: 2px 5px;
-            margin: 2px 0;
-            background: white;
+            flex-direction: column;
+            gap: 1px;
+            position: relative;
+        }
+        
+        .money-bill {
+            width: 60px;
+            height: 25px;
+            background: linear-gradient(135deg, #85bb65 0%, #6fa054 100%);
+            border: 2px solid #4a7c3c;
             border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+            cursor: grab;
+            position: absolute;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            user-select: none;
+            z-index: 100;
+            transition: none;
+        }
+        
+        .money-bill::before {
+            content: '10';
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 8px;
+            opacity: 0.8;
+        }
+        
+        .money-bill::after {
+            content: '10';
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 8px;
+            opacity: 0.8;
+        }
+        
+        .money-bill:hover:not(.dragging) {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+        
+        .money-bill:active {
+            cursor: grabbing;
+            z-index: 1000;
+        }
+        
+        .money-bill.dragging {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .token {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: grab;
+            position: absolute;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            user-select: none;
+            z-index: 100;
+            transition: none;
+        }
+        
+        .token:hover:not(.dragging) {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        
+        .token:active {
+            cursor: grabbing;
+            z-index: 1000;
+        }
+        
+        .token.dragging {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .token-purple { background: #8B008B; }
+        .token-orange { background: #FF8C00; }
+        .token-blue { background: #4169E1; }
+        .token-yellow { background: #FFD700; color: black; }
+        .token-red { background: #DC143C; }
+        
+        .components-label {
+            color: #f5f5dc;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 1px;
         }
     </style>
 </head>
@@ -444,6 +548,18 @@
                 <div class="value-spaces" id="value-spaces"></div>
             </div>
             
+            <!-- Components Area: Money and Tokens -->
+            <div id="componentsArea">
+                <span class="components-label">COMPONENTS:</span>
+                <div id="moneyContainer" style="position: relative; width: 100px; height: 60px;">
+                    <!-- Money bills will be added here -->
+                </div>
+                <div style="width: 2px; height: 50px; background: rgba(245,245,220,0.3); margin: 0 10px;"></div>
+                <div id="tokensContainer" style="position: relative; display: flex; gap: 10px;">
+                    <!-- Tokens will be added here -->
+                </div>
+            </div>
+            
             <!-- Right: Control Panel -->
             <div id="controlPanel">
                 <div class="control-section" id="roomInfoSection" style="display: none;">
@@ -469,7 +585,16 @@
                     <button class="control-btn" id="nextRoundBtn">Next Round</button>
                     <button class="control-btn" id="payDividendsBtn">Pay Dividends</button>
                     <button class="control-btn" id="claimPriorityBtn">Claim Priority</button>
+                    <button class="control-btn" id="resetComponentsBtn" style="background: #FF9800;">Reset Components</button>
                     <button class="control-btn" id="resetBtn" style="background: #f44336;">Reset Game</button>
+                    <div style="margin-top: 10px; padding: 5px; background: rgba(0,0,0,0.1); border-radius: 3px; font-size: 10px;">
+                        <strong>Shortcuts:</strong><br>
+                        WASD: Pan map<br>
+                        +/-: Zoom<br>
+                        R: Reset view<br>
+                        Shift+R: Reset components<br>
+                        Double-click component: Reset position
+                    </div>
                 </div>
                 
                 <div class="control-section">
@@ -747,6 +872,38 @@
                         broadcastGameState();
                     }
                     break;
+                case 'componentMoved':
+                    // Sync draggable component positions
+                    const container = data.elementType === 'money' 
+                        ? document.getElementById('moneyContainer')
+                        : document.getElementById('tokensContainer');
+                    if (container && container.children[data.elementId]) {
+                        const element = container.children[data.elementId];
+                        element.style.transform = `translate(${data.x}px, ${data.y}px)`;
+                    }
+                    // Forward to other players if host
+                    if (isHost) {
+                        connections.forEach(c => {
+                            if (c.open && c !== conn) {
+                                c.send(data);
+                            }
+                        });
+                    }
+                    break;
+                case 'componentsReset':
+                    // Reset all components
+                    document.querySelectorAll('.money-bill, .token').forEach(element => {
+                        element.style.transform = 'translate(0px, 0px)';
+                    });
+                    // Forward to other players if host
+                    if (isHost) {
+                        connections.forEach(c => {
+                            if (c.open && c !== conn) {
+                                c.send(data);
+                            }
+                        });
+                    }
+                    break;
             }
         }
         
@@ -783,8 +940,143 @@
             setupCanvas();
             generateHexMap();
             setupBoardUI();
+            setupComponents();
             setupEventListeners();
             updateUI();
+        }
+        
+        function setupComponents() {
+            // Create money bills in a stacked appearance
+            const moneyContainer = document.getElementById('moneyContainer');
+            for (let i = 0; i < 15; i++) {
+                const bill = document.createElement('div');
+                bill.className = 'money-bill';
+                bill.innerHTML = '₧10';
+                // Create a fanned stack effect
+                bill.style.left = (i * 2.5) + 'px';
+                bill.style.top = (14 - i) * 2 + 'px';
+                bill.style.zIndex = i + 10;
+                bill.dataset.originalLeft = bill.style.left;
+                bill.dataset.originalTop = bill.style.top;
+                makeDraggable(bill);
+                moneyContainer.appendChild(bill);
+            }
+            
+            // Create tokens with better spacing
+            const tokensContainer = document.getElementById('tokensContainer');
+            const colors = ['purple', 'orange', 'blue', 'yellow', 'red'];
+            const symbols = ['P', 'O', 'B', 'Y', 'R'];
+            
+            colors.forEach((color, index) => {
+                const token = document.createElement('div');
+                token.className = `token token-${color}`;
+                token.innerHTML = symbols[index];
+                token.style.left = (index * 50) + 'px';
+                token.style.top = '10px';
+                token.style.zIndex = 50 + index;
+                token.dataset.originalLeft = token.style.left;
+                token.dataset.originalTop = token.style.top;
+                makeDraggable(token);
+                tokensContainer.appendChild(token);
+            });
+        }
+        
+        function makeDraggable(element) {
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+            
+            element.addEventListener('mousedown', dragStart);
+            
+            function dragStart(e) {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+                
+                if (e.target === element) {
+                    isDragging = true;
+                    element.classList.add('dragging');
+                    
+                    // Bring to front
+                    element.style.zIndex = '1000';
+                    
+                    // Attach listeners to document for smooth dragging
+                    document.addEventListener('mousemove', drag);
+                    document.addEventListener('mouseup', dragEnd);
+                }
+                e.preventDefault();
+            }
+            
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    
+                    xOffset = currentX;
+                    yOffset = currentY;
+                    
+                    element.style.transform = `translate(${currentX}px, ${currentY}px)`;
+                }
+            }
+            
+            function dragEnd(e) {
+                if (isDragging) {
+                    initialX = currentX;
+                    initialY = currentY;
+                    
+                    isDragging = false;
+                    element.classList.remove('dragging');
+                    
+                    // Set a high but not maximum z-index
+                    element.style.zIndex = '500';
+                    
+                    // Remove document listeners
+                    document.removeEventListener('mousemove', drag);
+                    document.removeEventListener('mouseup', dragEnd);
+                    
+                    // Optional: Broadcast position to other players
+                    if (connections.length > 0 || isHost) {
+                        const elementType = element.classList.contains('money-bill') ? 'money' : 'token';
+                        const elementId = Array.from(element.parentNode.children).indexOf(element);
+                        const message = {
+                            type: 'componentMoved',
+                            elementType: elementType,
+                            elementId: elementId,
+                            x: currentX,
+                            y: currentY
+                        };
+                        
+                        if (isHost) {
+                            connections.forEach(conn => {
+                                if (conn.open) {
+                                    conn.send(message);
+                                }
+                            });
+                        } else if (connections[0]) {
+                            connections[0].send(message);
+                        }
+                    }
+                }
+            }
+            
+            // Add double-click to reset position
+            element.addEventListener('dblclick', () => {
+                element.style.transform = 'translate(0px, 0px)';
+                xOffset = 0;
+                yOffset = 0;
+                // Reset z-index based on type
+                if (element.classList.contains('money-bill')) {
+                    const index = Array.from(element.parentNode.children).indexOf(element);
+                    element.style.zIndex = index + 10;
+                } else {
+                    const index = Array.from(element.parentNode.children).indexOf(element);
+                    element.style.zIndex = 50 + index;
+                }
+            });
         }
         
         function setupCanvas() {
@@ -998,6 +1290,55 @@
                 }
             });
             
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                const moveSpeed = 30;
+                switch(e.key) {
+                    case 'ArrowUp':
+                    case 'w':
+                        camera.y += moveSpeed;
+                        render();
+                        break;
+                    case 'ArrowDown':
+                    case 's':
+                        camera.y -= moveSpeed;
+                        render();
+                        break;
+                    case 'ArrowLeft':
+                    case 'a':
+                        camera.x += moveSpeed;
+                        render();
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                        camera.x -= moveSpeed;
+                        render();
+                        break;
+                    case '+':
+                    case '=':
+                        camera.zoom = Math.min(2, camera.zoom + 0.1);
+                        render();
+                        break;
+                    case '-':
+                    case '_':
+                        camera.zoom = Math.max(0.5, camera.zoom - 0.1);
+                        render();
+                        break;
+                    case 'r':
+                        if (e.shiftKey) {
+                            // Shift+R: Reset all components
+                            resetAllComponents();
+                        } else {
+                            // R: Reset camera view
+                            camera.x = 0;
+                            camera.y = 0;
+                            camera.zoom = 0.8;
+                            render();
+                        }
+                        break;
+                }
+            });
+            
             // Control buttons
             document.getElementById('claimPriorityBtn').onclick = claimPriority;
             document.getElementById('payDividendsBtn').onclick = () => {
@@ -1008,6 +1349,7 @@
                     connections[0].send({ type: 'payDividends' });
                 }
             };
+            document.getElementById('resetComponentsBtn').onclick = resetAllComponents;
             document.getElementById('resetBtn').onclick = () => {
                 if (confirm('Reset the entire game?')) {
                     location.reload();
@@ -1345,6 +1687,37 @@
             
             logAction(result);
             alert(result);
+        }
+        
+        function resetAllComponents() {
+            // Reset all money bills to original stack
+            const moneyBills = document.querySelectorAll('.money-bill');
+            moneyBills.forEach((bill, index) => {
+                bill.style.transform = 'translate(0px, 0px)';
+                bill.style.zIndex = index + 10;
+            });
+            
+            // Reset all tokens
+            const tokens = document.querySelectorAll('.token');
+            tokens.forEach((token, index) => {
+                token.style.transform = 'translate(0px, 0px)';
+                token.style.zIndex = 50 + index;
+            });
+            
+            // Broadcast reset to other players
+            if (connections.length > 0 || isHost) {
+                const message = { type: 'componentsReset' };
+                
+                if (isHost) {
+                    connections.forEach(conn => {
+                        if (conn.open) {
+                            conn.send(message);
+                        }
+                    });
+                } else if (connections[0]) {
+                    connections[0].send(message);
+                }
+            }
         }
         
         function render() {
